@@ -1,0 +1,56 @@
+package ru.practicum.explorewithme.service;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import ru.practicum.explorewithme.repository.EndpointHitRepository;
+import ru.practicum.explorewithme.test.ServiceTest;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public class ViewStatsServiceImplTest extends ServiceTest {
+    @InjectMocks
+    private ViewStatsServiceImpl viewStatsService;
+    @Mock
+    private EndpointHitRepository endpointHitRepository;
+
+    @Test
+    public void getStatistics_UniqueTrue_UniqueMethodCalls() {
+        // Arrange
+        LocalDateTime start = NOW.minusDays(2);
+        LocalDateTime end = NOW.minusDays(1);
+        List<String> uris = List.of("");
+        boolean unique = true;
+
+        // Act
+        viewStatsService.getStatistics(start, end, uris, unique);
+
+        // Assert
+        assertMethodCall(endpointHitRepository, repository -> repository.findUniqueStatsByDateAndUris(
+                Mockito.eq(start),
+                Mockito.eq(end),
+                Mockito.eq(uris)
+        ));
+    }
+
+    @Test
+    public void getStatistics_UniqueFalse_UsualMethodCalls() {
+        // Arrange
+        LocalDateTime start = NOW.minusDays(2);
+        LocalDateTime end = NOW.minusDays(1);
+        List<String> uris = List.of("");
+        boolean unique = false;
+
+        // Act
+        viewStatsService.getStatistics(start, end, uris, unique);
+
+        // Assert
+        assertMethodCall(endpointHitRepository, repository -> repository.findStatsByDateAndUris(
+                Mockito.eq(start),
+                Mockito.eq(end),
+                Mockito.eq(uris)
+        ));
+    }
+}
