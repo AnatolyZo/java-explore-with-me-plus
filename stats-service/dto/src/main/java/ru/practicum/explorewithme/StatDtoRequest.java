@@ -1,4 +1,4 @@
 package ru.practicum.explorewithme;
 
-public class StatDto {
+public class StatDtoRequest {
 }
