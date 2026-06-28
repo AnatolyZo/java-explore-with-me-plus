@@ -16,6 +16,7 @@ public class EndpointHitServiceImpl implements EndpointHitService {
     private final EndpointHitRepository endpointHitRepository;
 
     @Override
+    @Transactional
     public void saveHit(EndpointHitRequest request) {
         EndpointHit endpointHit = endpointHitMapper.toEndpointHit(request);
         endpointHitRepository.save(endpointHit);

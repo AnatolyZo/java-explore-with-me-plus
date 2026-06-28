@@ -33,7 +33,7 @@ public class ViewStatsController {
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
             @RequestParam(name = PARAM_END)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
-            @RequestParam(name = PARAM_URIS) List<String> uris,
+            @RequestParam(name = PARAM_URIS, required = false) List<String> uris,
             @RequestParam(name = PARAM_UNIQUE, required = false, defaultValue = "false") boolean unique) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(viewStatsService.getStatistics(start, end, uris, unique));
