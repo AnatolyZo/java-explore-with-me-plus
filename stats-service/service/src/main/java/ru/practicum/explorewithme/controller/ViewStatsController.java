@@ -1,6 +1,7 @@
 package ru.practicum.explorewithme.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import ru.practicum.explorewithme.stats.ViewStatsResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping(ViewStatsController.URL_BASE)
 @RequiredArgsConstructor
@@ -35,7 +37,9 @@ public class ViewStatsController {
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
             @RequestParam(name = PARAM_URIS, required = false) List<String> uris,
             @RequestParam(name = PARAM_UNIQUE, required = false, defaultValue = "false") boolean unique) {
-        return ResponseEntity.status(HttpStatus.OK)
+        ResponseEntity<List<ViewStatsResponse>> statsList = ResponseEntity.status(HttpStatus.OK)
                 .body(viewStatsService.getStatistics(start, end, uris, unique));
+        log.debug("Статистические данные {} извлечены из базы данных", statsList);
+        return statsList;
     }
 }
