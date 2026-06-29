@@ -2,11 +2,17 @@ package ru.practicum.explorewithme;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.explorewithme.hit.EndpointHitRequest;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
+
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class StatsClient {
@@ -26,8 +32,16 @@ public class StatsClient {
         restTemplate.postForEntity(API_PREFIX_HIT, endpointHitRequest, Void.class);
     }
 
-    public ViewStatsResponse getStatistics() {
+    public List<ViewStatsResponse> getStatistics() {
         log.trace("Отправлен запрос на получение статистических данных");
-        return restTemplate.getForObject(API_PREFIX_STATS, ViewStatsResponse.class);
+
+        ResponseEntity<List<ViewStatsResponse>> response = restTemplate.exchange(
+                API_PREFIX_STATS,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<ViewStatsResponse>>() {}
+        );
+        List<ViewStatsResponse> body = response.getBody();
+        return body != null ? body : Collections.emptyList();
     }
 }
