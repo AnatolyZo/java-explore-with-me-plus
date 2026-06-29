@@ -23,6 +23,6 @@ public class EndpointHitController {
     @PostMapping
     public ResponseEntity<Void> saveHit(@RequestBody @Valid EndpointHitRequest request) {
         endpointHitService.saveHit(request);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 }

@@ -51,4 +51,8 @@ public class ControllerTest extends TestBase {
             throw new RuntimeException(e);
         }
     }
+
+    protected void expectStatusCreated(ResultActions actions) {
+        expect(actions, MockMvcResultMatchers.status().isCreated());
+    }
 }

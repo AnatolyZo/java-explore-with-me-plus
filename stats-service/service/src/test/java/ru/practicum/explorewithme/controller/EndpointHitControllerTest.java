@@ -35,7 +35,7 @@ public class EndpointHitControllerTest extends ControllerTest {
         ResultActions result = performPost(EndpointHitController.URL_BASE, request);
 
         // Assert
-        expectStatusOk(result);
+        expectStatusCreated(result);
         assertMethodCall(endpointHitService, service ->
                 service.saveHit(Mockito.any(EndpointHitRequest.class)));
     }

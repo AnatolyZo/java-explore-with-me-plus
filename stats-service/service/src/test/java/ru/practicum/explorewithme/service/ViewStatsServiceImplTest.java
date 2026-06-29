@@ -53,4 +53,38 @@ public class ViewStatsServiceImplTest extends ServiceTest {
                 Mockito.eq(uris)
         ));
     }
+
+    @Test
+    public void getStatistics_NllUris_UniqueFalse_UsualMethodCalls() {
+        // Arrange
+        LocalDateTime start = NOW.minusDays(2);
+        LocalDateTime end = NOW.minusDays(1);
+        boolean unique = false;
+
+        // Act
+        viewStatsService.getStatistics(start, end, null, unique);
+
+        // Assert
+        assertMethodCall(endpointHitRepository, repository -> repository.findStatsByDate(
+                Mockito.eq(start),
+                Mockito.eq(end)
+        ));
+    }
+
+    @Test
+    public void getStatistics_NllUris_UniqueTrue_UsualMethodCalls() {
+        // Arrange
+        LocalDateTime start = NOW.minusDays(2);
+        LocalDateTime end = NOW.minusDays(1);
+        boolean unique = true;
+
+        // Act
+        viewStatsService.getStatistics(start, end, null, unique);
+
+        // Assert
+        assertMethodCall(endpointHitRepository, repository -> repository.findUniqueStatsByDate(
+                Mockito.eq(start),
+                Mockito.eq(end)
+        ));
+    }
 }

@@ -17,7 +17,7 @@ public class ViewStatsServiceImpl implements ViewStatsService {
 
     @Override
     public List<ViewStatsResponse> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
-        if (uris == null || uris.isEmpty()) {
+        if (uris == null) {
             if (unique) {
                 return endpointHitRepository.findUniqueStatsByDate(start, end);
             } else {
