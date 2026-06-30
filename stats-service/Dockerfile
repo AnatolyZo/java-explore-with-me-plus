@@ -1,3 +1,4 @@
+#stats-service Dockerfile
 FROM eclipse-temurin:21-jre-jammy
 
 ENV TZ=Europe/Moscow
