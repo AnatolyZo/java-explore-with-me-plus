@@ -12,26 +12,26 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import ru.practicum.explorewithme.common.exception.ConflictException;
 import ru.practicum.explorewithme.common.exception.NotFoundException;
 
+import java.time.LocalDateTime;
+
 @RestControllerAdvice
 public class ErrorHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(NotFoundException exception) {
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        return ResponseEntity.status(status).body(ApiError.of(
-                status,
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
                 "The required object was not found.",
                 exception.getMessage()
-        ));
+        );
     }
 
     @ExceptionHandler({ConflictException.class, DataIntegrityViolationException.class})
     public ResponseEntity<ApiError> handleConflict(RuntimeException exception) {
-        HttpStatus status = HttpStatus.CONFLICT;
-        return ResponseEntity.status(status).body(ApiError.of(
-                status,
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
                 "Integrity constraint has been violated.",
                 exception.getMessage()
-        ));
+        );
     }
 
     @ExceptionHandler({
@@ -42,11 +42,15 @@ public class ErrorHandler {
             IllegalArgumentException.class
     })
     public ResponseEntity<ApiError> handleBadRequest(Exception exception) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        return ResponseEntity.status(status).body(ApiError.of(
-                status,
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
                 "Incorrectly made request.",
                 exception.getMessage()
-        ));
+        );
+    }
+
+    private ResponseEntity<ApiError> buildErrorResponse(HttpStatus status, String reason, String message) {
+        ApiError error = new ApiError(message, reason, status.toString(), LocalDateTime.now());
+        return ResponseEntity.status(status).body(error);
     }
 }

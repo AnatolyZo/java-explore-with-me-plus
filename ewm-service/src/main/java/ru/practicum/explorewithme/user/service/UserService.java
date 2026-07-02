@@ -2,7 +2,7 @@ package ru.practicum.explorewithme.user.service;
 
 import ru.practicum.explorewithme.user.dto.NewUserRequest;
 import ru.practicum.explorewithme.user.dto.UserDto;
-import ru.practicum.explorewithme.user.model.User;
+import ru.practicum.explorewithme.user.entity.User;
 
 import java.util.List;
 

@@ -10,7 +10,7 @@ import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
 import ru.practicum.explorewithme.user.dto.NewUserRequest;
 import ru.practicum.explorewithme.user.dto.UserDto;
 import ru.practicum.explorewithme.user.mapper.UserMapper;
-import ru.practicum.explorewithme.user.model.User;
+import ru.practicum.explorewithme.user.entity.User;
 import ru.practicum.explorewithme.user.repository.UserRepository;
 
 import java.util.List;
@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto createUser(NewUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("User with email " + request.getEmail() + " already exists");
+            throw new ConflictException("User", "email", request.getEmail());
         }
 
         User user = userRepository.save(UserMapper.toUser(request));
@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("User with id=" + userId + " was not found");
+            throw new NotFoundException("User", userId);
         }
 
         userRepository.deleteById(userId);
@@ -61,6 +61,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+                .orElseThrow(() -> new NotFoundException("User", userId));
     }
 }
