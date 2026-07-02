@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class ExploreWithMeMainService {
+    public static final String URL_ADMIN = "/admin";
+
     public static void main(String[] args) {
         SpringApplication.run(ExploreWithMeMainService.class, args);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))

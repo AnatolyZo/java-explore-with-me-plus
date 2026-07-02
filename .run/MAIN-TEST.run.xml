@@ -1,5 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="ExploreWithMeMainService" type="Application" factoryName="Application" nameIsGenerated="true">
+  <configuration default="false" name="MAIN-TEST" type="Application" factoryName="Application">
+    <envs>
+      <env name="--spring.profiles.active" value="test" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="ru.practicum.explorewithme.ExploreWithMeMainService" />
     <module name="explore-with-me-ewm-service" />
     <extension name="coverage">
