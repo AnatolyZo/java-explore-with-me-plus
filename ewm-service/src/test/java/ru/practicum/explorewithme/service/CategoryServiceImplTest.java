@@ -6,7 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.jpa.repository.JpaRepository;
 import ru.practicum.explorewithme.dto.CategoryDto;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
