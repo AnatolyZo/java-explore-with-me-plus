@@ -36,7 +36,7 @@ public class AdminCategoryController {
 
     @PatchMapping("/{" + ID_CATEGORY + "}")
     public ResponseEntity<CategoryDto> updateCategory(@PathVariable(name = ID_CATEGORY) long catId,
-                                                      @RequestBody UpdateCategoryDto body) {
+                                                      @RequestBody @Valid UpdateCategoryDto body) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(categoryService.updateCategory(catId, body));
     }

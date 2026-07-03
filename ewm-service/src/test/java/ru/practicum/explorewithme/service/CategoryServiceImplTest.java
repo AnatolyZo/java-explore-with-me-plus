@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.dao.DataIntegrityViolationException;
 import ru.practicum.explorewithme.dto.CategoryDto;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
@@ -31,6 +30,7 @@ public class CategoryServiceImplTest extends ServiceTest {
         NewCategoryDto body = buildNewCategoryDto();
         long savedId = 1L;
         Category saved = buildCategory(savedId, body);
+        whenCategoryNotExistBy(body.getName());
         whenSaveReturns(categoryRepository, saved);
 
         // Act
@@ -45,7 +45,7 @@ public class CategoryServiceImplTest extends ServiceTest {
     public void createCategory_ExistingName_DuplicatedDataException() {
         // Arrange
         NewCategoryDto body = buildNewCategoryDto();
-        whenSaveThrows(categoryRepository, new DataIntegrityViolationException(""));
+        whenCategoryExistBy(body.getName());
 
         // Act
         Throwable thrown = Assertions.catchThrowable(() -> categoryService.createCategory(body));
@@ -101,8 +101,9 @@ public class CategoryServiceImplTest extends ServiceTest {
         // Arrange
         long savedId = 1L;
         UpdateCategoryDto body = buildUpdateCategoryDto();
-        Category saved = buildCategory(savedId, body);
+        Category saved = buildCategory(savedId);
         whenEntityFoundIn(categoryRepository, saved);
+        whenCategoryNotExistBy(body.getName());
         whenSaveReturns(categoryRepository, saved);
 
         // Act
@@ -111,6 +112,25 @@ public class CategoryServiceImplTest extends ServiceTest {
         // Assert
         CategoryDto expected = buildCategoryDto(saved);
         assertEquals(actual, expected);
+    }
+
+    @Test
+    public void updateCategory_NameNotChange_ReturnsObject() {
+        // Arrange
+        long savedId = 1L;
+        UpdateCategoryDto body = buildUpdateCategoryDto();
+        String existingName = body.getName();
+        Category saved = buildCategory(savedId, existingName);
+        whenEntityFoundIn(categoryRepository, saved);
+
+        // Act
+        CategoryDto actual = categoryService.updateCategory(savedId, body);
+
+        // Assert
+        CategoryDto expected = buildCategoryDto(saved);
+        assertEquals(actual, expected);
+        assertMethodNotCall(categoryRepository, repository ->
+                repository.save(Mockito.any(Category.class)));
     }
 
     @Test
@@ -132,15 +152,25 @@ public class CategoryServiceImplTest extends ServiceTest {
         // Arrange
         long savedId = 1L;
         UpdateCategoryDto body = buildUpdateCategoryDto();
-        Category saved = buildCategory(savedId, body);
+        Category saved = buildCategory(savedId);
         whenEntityFoundIn(categoryRepository, saved);
-        whenSaveThrows(categoryRepository, new DataIntegrityViolationException(""));
+        whenCategoryExistBy(body.getName());
 
         // Act
         Throwable thrown = Assertions.catchThrowable(() -> categoryService.updateCategory(savedId, body));
 
         // Assert
         assertException(thrown, DuplicatedDataException.class);
+    }
+
+    private void whenCategoryExistBy(String name) {
+        Mockito.when(categoryRepository.existsByName(Mockito.eq(name)))
+                .thenReturn(true);
+    }
+
+    private void whenCategoryNotExistBy(String name) {
+        Mockito.when(categoryRepository.existsByName(Mockito.eq(name)))
+                .thenReturn(false);
     }
 
     private void whenEventsExistIn(long categoryId) {
@@ -160,17 +190,18 @@ public class CategoryServiceImplTest extends ServiceTest {
                 .build();
     }
 
-    private Category buildCategory(long id, NewCategoryDto newCategoryDto) {
+    private Category buildCategory(long id, String name) {
         return Category.builder()
                 .id(id)
-                .name(newCategoryDto.getName())
+                .name(name)
                 .build();
     }
 
-    private Category buildCategory(long id, UpdateCategoryDto updateCategoryDto) {
-        return Category.builder()
-                .id(id)
-                .name(updateCategoryDto.getName())
-                .build();
+    private Category buildCategory(long id) {
+        return buildCategory(id, "Category Name");
+    }
+
+    private Category buildCategory(long id, NewCategoryDto newCategoryDto) {
+        return buildCategory(id, newCategoryDto.getName());
     }
 }

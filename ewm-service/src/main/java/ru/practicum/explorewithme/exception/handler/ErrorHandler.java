@@ -16,50 +16,53 @@ import java.time.LocalDateTime;
 @SuppressWarnings("unused")
 public class ErrorHandler {
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> unexpected(Throwable e) {
-        return createResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
+    public ResponseEntity<ApiError> unexpected(Throwable e) {
+        return createErrorResponse(
                 "unexpected error",
-                e.getMessage());
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 
-    private ResponseEntity<ErrorResponse> createResponse(HttpStatus status, String reason, String message) {
-        return ResponseEntity.status(status).body(new ErrorResponse(
-                status.toString(),
-                reason,
-                message,
-                LocalDateTime.now()
-        ));
+    private ResponseEntity<ApiError> createErrorResponse(String message, String reason, HttpStatus status) {
+        return ResponseEntity.status(status).body(
+                new ApiError(
+                        message,
+                        reason,
+                        status.toString(),
+                        LocalDateTime.now()
+                )
+        );
     }
 
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> methodArgumentNotValid(MethodArgumentNotValidException e) {
+    public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getFieldError();
         if (fieldError == null) {
-            return createResponse(HttpStatus.BAD_REQUEST, "incorrect field value", "");
+            return createErrorResponse("incorrect field value", "", HttpStatus.BAD_REQUEST);
         }
-        return createResponse(
-                HttpStatus.BAD_REQUEST,
+        return createErrorResponse(
                 "incorrect field value",
                 String.format(
                         "value of field '%s'=%s is incorrect, cause: %s",
                         fieldError.getField(),
                         fieldError.getRejectedValue(),
-                        fieldError.getDefaultMessage()));
+                        fieldError.getDefaultMessage()),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> duplicatedData(DuplicatedDataException e) {
-        return createResponse(HttpStatus.CONFLICT, "duplicated data", e.getMessage());
+    public ResponseEntity<ApiError> duplicatedData(DuplicatedDataException e) {
+        return createErrorResponse("duplicated data", e.getMessage(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> notFound(NotFoundException e) {
-        return createResponse(HttpStatus.NOT_FOUND, "required object was not found", e.getMessage());
+    public ResponseEntity<ApiError> notFound(NotFoundException e) {
+        return createErrorResponse("required object was not found", e.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> notEmptyCategory(NotEmptyCategoryException e) {
-        return createResponse(HttpStatus.CONFLICT, "trying delete category with events", e.getMessage());
+    public ResponseEntity<ApiError> notEmptyCategory(NotEmptyCategoryException e) {
+        return createErrorResponse("trying delete category with events", e.getMessage(), HttpStatus.CONFLICT);
     }
 }

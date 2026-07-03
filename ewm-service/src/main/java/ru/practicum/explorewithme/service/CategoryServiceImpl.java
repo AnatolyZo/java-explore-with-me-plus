@@ -2,7 +2,6 @@ package ru.practicum.explorewithme.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.dto.CategoryDto;
@@ -18,34 +17,31 @@ import ru.practicum.explorewithme.repository.EventRepository;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;
 
     @Override
-    @Transactional
     public CategoryDto createCategory(NewCategoryDto body) {
         log.trace("Инициировано сохранение категории. Тело запроса: {}", body);
+        checkNameUniqueness(body.getName());
         Category category = CategoryMapper.toCategory(body);
         log.debug("Тело запроса {} преобразовано в категорию {}", body, category);
-        Category result = save(category);
+        Category result = categoryRepository.save(category);
         log.debug("Категория {} сохранена", body);
         return CategoryMapper.toCategoryDto(result);
     }
 
-    private Category save(Category category) {
-        try {
-            return categoryRepository.save(category);
-        } catch (DataIntegrityViolationException e) {
-            log.info("Не удалось сохранить категорию {}", category);
-            throw new DuplicatedDataException("category", "name", category.getName());
+    private void checkNameUniqueness(String name) {
+        if (categoryRepository.existsByName(name)) {
+            log.info("Категория с именем '{}' уже существует", name);
+            throw new DuplicatedDataException("category", "name", name);
         }
     }
 
     @Override
-    @Transactional
     public void deleteCategory(long catId) {
         log.trace("Инициировано удаление категории с id={}", catId);
         checkCategoryExistsBy(catId);
@@ -70,13 +66,18 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional
     public CategoryDto updateCategory(long catId, UpdateCategoryDto body) {
         log.trace("Инициировано сохранение категории с id={}. Тело запроса: {}", catId, body);
         Category category = findCategoryBy(catId);
+        log.trace("Категория найдена: {}", category);
+        if (category.getName().equals(body.getName())) {
+            log.trace("Имя категории не изменилось");
+            return CategoryMapper.toCategoryDto(category);
+        }
+        checkNameUniqueness(body.getName());
         Category update = CategoryMapper.toCategory(category, body);
         log.debug("Создано обновление категории: {}", update);
-        Category result = save(update);
+        Category result = categoryRepository.save(update);
         log.debug("Обновление {} сохранено", update);
         return CategoryMapper.toCategoryDto(result);
     }

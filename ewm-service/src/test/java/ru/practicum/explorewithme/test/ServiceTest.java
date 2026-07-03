@@ -23,11 +23,6 @@ public class ServiceTest extends TestBase {
                 .thenAnswer(invocationOnMock -> saved);
     }
 
-    protected <E> void whenSaveThrows(JpaRepository<E, Long> repository, Throwable throwable) {
-        Mockito.when(repository.save(Mockito.any()))
-                .thenThrow(throwable);
-    }
-
     protected <E> void whenEntityExistIn(JpaRepository<E, Long> repository) {
         Mockito.when(repository.existsById(Mockito.anyLong()))
                 .thenReturn(true);
