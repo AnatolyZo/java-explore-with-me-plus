@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.explorewithme.common.exception.ConflictException;
-import ru.practicum.explorewithme.common.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
 import ru.practicum.explorewithme.user.dto.NewUserRequest;
 import ru.practicum.explorewithme.user.dto.UserDto;
@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto createUser(NewUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("User", "email", request.getEmail());
+            throw new DuplicatedDataException("User", "email", request.getEmail());
         }
 
         User user = userRepository.save(UserMapper.toUser(request));

@@ -8,8 +8,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import ru.practicum.explorewithme.common.exception.ConflictException;
-import ru.practicum.explorewithme.common.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.user.dto.NewUserRequest;
 import ru.practicum.explorewithme.user.dto.UserDto;
 import ru.practicum.explorewithme.user.entity.User;
@@ -78,9 +78,9 @@ class UserServiceImplTest {
 
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
 
-        ConflictException exception = assertThrows(ConflictException.class, () -> userService.createUser(request));
+        DuplicatedDataException exception = assertThrows(DuplicatedDataException.class, () -> userService.createUser(request));
 
-        assertEquals("User with email=test-user@mail.com already exists", exception.getMessage());
+        assertEquals("User with parameter 'email'=test-user@mail.com already exists", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -164,7 +164,7 @@ class UserServiceImplTest {
 
         NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.deleteUser(1L));
 
-        assertEquals("User with id=1 was not found", exception.getMessage());
+        assertEquals("User with id=1 not exists", exception.getMessage());
         verify(userRepository, never()).deleteById(1L);
     }
 
@@ -188,6 +188,6 @@ class UserServiceImplTest {
 
         NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.getUserById(1L));
 
-        assertEquals("User with id=1 was not found", exception.getMessage());
+        assertEquals("User with id=1 not exists", exception.getMessage());
     }
 }
