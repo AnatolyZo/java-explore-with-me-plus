@@ -3,6 +3,7 @@ package ru.practicum.explorewithme.service;
 import ru.practicum.explorewithme.dto.CategoryDto;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
+import ru.practicum.explorewithme.entity.Category;
 
 public interface CategoryService {
     CategoryDto createCategory(NewCategoryDto body);
@@ -10,4 +11,6 @@ public interface CategoryService {
     void deleteCategory(long catId);
 
     CategoryDto updateCategory(long catId, UpdateCategoryDto body);
+
+    Category findCategoryBy(long id);
 }

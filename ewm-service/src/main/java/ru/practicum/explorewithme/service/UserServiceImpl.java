@@ -1,4 +1,4 @@
-package ru.practicum.explorewithme.user.service;
+package ru.practicum.explorewithme.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -7,11 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
-import ru.practicum.explorewithme.user.dto.NewUserRequest;
-import ru.practicum.explorewithme.user.dto.UserDto;
-import ru.practicum.explorewithme.user.mapper.UserMapper;
-import ru.practicum.explorewithme.user.entity.User;
-import ru.practicum.explorewithme.user.repository.UserRepository;
+import ru.practicum.explorewithme.dto.NewUserRequest;
+import ru.practicum.explorewithme.dto.UserDto;
+import ru.practicum.explorewithme.mapper.UserMapper;
+import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.repository.UserRepository;
 
 import java.util.List;
 
