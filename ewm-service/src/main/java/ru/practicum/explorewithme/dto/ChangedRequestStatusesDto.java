@@ -9,7 +9,7 @@ import java.util.List;
 @Builder
 @Getter
 @ToString
-public class UpdateRequestStatusDto {
-    List<Long> requestIds;
-    RequestStatus status;
+public class ChangedRequestStatusesDto {
+    List<RequestDto> confirmedRequests;
+    List<RequestDto> rejectedRequests;
 }

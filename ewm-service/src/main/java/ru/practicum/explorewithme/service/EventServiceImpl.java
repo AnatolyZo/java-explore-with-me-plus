@@ -11,6 +11,7 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.mapper.EventMapper;
@@ -18,6 +19,7 @@ import ru.practicum.explorewithme.mapper.LocationMapper;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,6 +30,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final CategoryService categoryService;
     private final UserService userService;
+    private final RequestService requestService;
     private final StatsClient statsClient;
     private static final String API_PREFIX_EVENTS = "/events/";
 
@@ -59,6 +62,10 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventDto createEvent(long userId, NewEventDto newEventDto) {
+        if (newEventDto.getEventDate() != null) {
+            checkTimeBeforeEventStart(newEventDto.getEventDate());
+        }
+
         //Получаем данные по категории, инициатору и месту проведения события
         Category category = categoryService.findCategoryBy(newEventDto.getCategory());
         User initiator = userService.getUserById(userId);
@@ -67,6 +74,9 @@ public class EventServiceImpl implements EventService {
 
         //Формируем событие и сохраняем
         Event event = EventMapper.mapToEvent(newEventDto, category, initiator, locationEmbeddable);
+        event.setCreatedOn(LocalDateTime.now());
+        event.setStatus(EventStatus.PENDING);
+
         Event createdEvent = eventRepository.save(event);
         return EventMapper.mapToEventDto(createdEvent,0);
     }
@@ -84,11 +94,15 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventDto updateEvent(long userId, long eventId, UpdateEventDto body) {
+        if (body.getEventDate() != null) {
+            checkTimeBeforeEventStart(body.getEventDate());
+        }
+
         Event event = getEventById(eventId, userId);
 
         //Проверяем, что событие отменено или ожидает модерации
         if (!event.getStatus().equals(EventStatus.CANCELLED) && !event.getStatus().equals(EventStatus.PENDING)) {
-            throw new UnavailableUpdateException(eventId);
+            throw new UnavailableUpdateException("Event", eventId);
         }
 
         //Проверяем хочет ли пользователь отменить событие
@@ -108,13 +122,65 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<RequestDto> getRequests(long userId, long eventId) {
-        return List.of();
+        checkEventExistence(userId, eventId);
+
+        return requestService.getRequestsToUsersEvent(eventId);
     }
 
     @Override
     @Transactional
-    public List<RequestDto> updateRequestStatuses(long userId, long eventId, UpdateRequestStatusDto update) {
-        return List.of();
+    public ChangedRequestStatusesDto updateRequestStatuses(long userId, long eventId, UpdateRequestStatusDto update) {
+        Event event = getEventById(userId, eventId);
+
+        //Обработка ситуации, когда не установлено ограничение по количеству участников
+        //или запрос не требует модерации
+        if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
+            List<Long> requestIds = update.getRequestIds();
+            List<RequestDto> confirmedRequests = requestService.getRequestsByIds(requestIds);
+
+            return ChangedRequestStatusesDto.builder()
+                    .confirmedRequests(confirmedRequests)
+                    .build();
+        }
+
+        //Вычисление свободных мест для посещения события
+        int requestsAvailableToConfirm = event.getParticipantLimit() - event.getConfirmedRequests();
+
+        if (requestsAvailableToConfirm == 0) {
+            throw new UnavailableUpdateException("Event", eventId);
+        }
+
+        //Обработка случая подтверждения запросов
+        if (update.getStatus().equals(RequestStatus.CONFIRMED)) {
+            //Разделяем запросы на те, которые можем одобрить и отклонить, исходя из количества доступных мест
+            List<Long> requestsToConfirm = update.getRequestIds().stream()
+                    .limit(requestsAvailableToConfirm)
+                    .toList();
+
+            List<Long> requestsToReject = update.getRequestIds().stream()
+                    .skip(requestsAvailableToConfirm)
+                    .toList();
+
+            List<RequestDto> confirmedRequests = requestService.changeRequestStatuses(requestsToConfirm, RequestStatus.CONFIRMED);
+            List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(requestsToReject, RequestStatus.REJECTED);
+
+            //Обновляем количество свободных мест
+            event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests.size());
+            eventRepository.save(event);
+
+            return ChangedRequestStatusesDto.builder()
+                    .confirmedRequests(confirmedRequests)
+                    .rejectedRequests(rejectedRequests)
+                    .build();
+        }
+
+        //Обработка случая отклонения запросов
+        List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(update.getRequestIds(), RequestStatus.REJECTED);
+
+        return ChangedRequestStatusesDto.builder()
+                .confirmedRequests(List.of())
+                .rejectedRequests(rejectedRequests)
+                .build();
     }
 
     @Override
@@ -188,6 +254,19 @@ public class EventServiceImpl implements EventService {
 
         if (update.getTitle() != null && !update.getTitle().isEmpty()) {
             event.setTitle(update.getTitle());
+        }
+    }
+
+    private void checkEventExistence(long userId, long eventId) {
+        if (!eventRepository.existsByIdAndInitiatorId(eventId, userId)) {
+            throw new NotFoundException("event from user", userId);
+        }
+    }
+
+    private void checkTimeBeforeEventStart(LocalDateTime eventDate) {
+        Duration minOffset = Duration.ofHours(2);
+        if (!eventDate.isBefore(LocalDateTime.now().plus(minOffset))) {
+            throw new EarlyDateException(eventDate);
         }
     }
 }

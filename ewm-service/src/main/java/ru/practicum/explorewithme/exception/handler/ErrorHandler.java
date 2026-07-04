@@ -6,13 +6,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.explorewithme.exception.DuplicatedDataException;
-import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
-import ru.practicum.explorewithme.exception.NotFoundException;
-import ru.practicum.explorewithme.exception.UnavailableUpdateException;
-import ru.practicum.explorewithme.validation.DateIsNotEarly;
+import ru.practicum.explorewithme.exception.*;
 
-import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
@@ -45,28 +40,14 @@ public class ErrorHandler {
             return createErrorResponse("incorrect field value", "", HttpStatus.BAD_REQUEST);
         }
 
-        //Получение значения сообщения по умолчанию аннотации DateIsNotEarly
-        Method messageMethod = DateIsNotEarly.class.getMethod("message");
-        String defaultMessage = (String) messageMethod.getDefaultValue();
-
-        if (defaultMessage.equals(fieldError.getDefaultMessage())) {
-            return createErrorResponse(
-                    String.format("Field: %s. Error: %s. Value: %s",
-                            fieldError.getField(),
-                            fieldError.getDefaultMessage(),
-                            fieldError.getRejectedValue()),
-                    "For the requested operation the conditions are not met.",
-                    HttpStatus.FORBIDDEN);
-        } else {
-            return createErrorResponse(
-                    "incorrect field value",
-                    String.format(
-                            "value of field '%s'=%s is incorrect, cause: %s",
-                            fieldError.getField(),
-                            fieldError.getRejectedValue(),
-                            fieldError.getDefaultMessage()),
-                    HttpStatus.BAD_REQUEST);
-        }
+        return createErrorResponse(
+                "incorrect field value",
+                String.format(
+                        "value of field '%s'=%s is incorrect, cause: %s",
+                        fieldError.getField(),
+                        fieldError.getRejectedValue(),
+                        fieldError.getDefaultMessage()),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
@@ -87,5 +68,10 @@ public class ErrorHandler {
     @ExceptionHandler
     public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
         return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> earlyDate(EarlyDateException e) {
+        return createErrorResponse("date is early", e.getMessage(), HttpStatus.FORBIDDEN);
     }
 }

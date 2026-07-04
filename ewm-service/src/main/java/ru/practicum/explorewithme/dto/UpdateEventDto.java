@@ -1,10 +1,10 @@
 package ru.practicum.explorewithme.dto;
 
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import ru.practicum.explorewithme.validation.DateIsNotEarly;
 
 import java.time.LocalDateTime;
 
@@ -14,19 +14,18 @@ import java.time.LocalDateTime;
 public class UpdateEventDto {
     private String annotation;
 
-    @Positive
+    @Positive(message = "'category' must be positive.")
     private Long category;
 
     private String description;
 
-    @DateIsNotEarly
     private LocalDateTime eventDate;
 
     private Location location;
 
     private Boolean paid;
 
-    @Positive
+    @PositiveOrZero(message = "'participantLimit' must be positive or zero.")
     private Integer participantLimit;
 
     private Boolean requestModeration;

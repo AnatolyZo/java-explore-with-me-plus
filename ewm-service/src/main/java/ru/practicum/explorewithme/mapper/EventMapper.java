@@ -6,8 +6,6 @@ import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
 
-import java.time.LocalDateTime;
-
 public class EventMapper {
     public static Event mapToEvent(NewEventDto body,
                                    Category category,
@@ -16,17 +14,13 @@ public class EventMapper {
         return Event.builder()
                 .annotation(body.getAnnotation())
                 .category(category)
-                .confirmedRequests(0)
-                .createdOn(LocalDateTime.now())
                 .description(body.getDescription())
                 .eventDate(body.getEventDate())
                 .initiator(initiator)
                 .location(location)
                 .paid(body.getPaid())
                 .participantLimit(body.getParticipantLimit())
-                .publishedOn(null)
                 .requestModeration(body.getRequestModeration())
-                .status(EventStatus.PENDING)
                 .title(body.getTitle())
                 .build();
     }

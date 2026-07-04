@@ -1,7 +1,7 @@
 package ru.practicum.explorewithme.exception;
 
 public class UnavailableUpdateException extends RuntimeException {
-    public UnavailableUpdateException(long eventId) {
-        super(String.format("Event with id %d update is unavailable", eventId));
+    public UnavailableUpdateException(String className, long eventId) {
+        super(String.format("Update to %s with id %d is unavailable", className, eventId));
     }
 }

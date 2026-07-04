@@ -3,10 +3,10 @@ package ru.practicum.explorewithme.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import ru.practicum.explorewithme.validation.DateIsNotEarly;
 
 import java.time.LocalDateTime;
 
@@ -14,36 +14,35 @@ import java.time.LocalDateTime;
 @Getter
 @ToString
 public class NewEventDto {
-    @NotBlank
+    @NotBlank(message = "'annotation' field cannot be empty.")
     private String annotation;
 
-    @NotNull
-    @Positive
+    @NotNull(message = "'category' field cannot be null.")
+    @Positive(message = "'category' must be positive.")
     private Long category;
 
-    @NotBlank
+    @NotBlank(message = "'description' field cannot be empty.")
     private String description;
 
-    @NotNull
-    @DateIsNotEarly
+    @NotNull(message = "'eventDate' field cannot be null.")
     private LocalDateTime eventDate;
 
-    @NotNull
+    @NotNull(message = "'location' field cannot be null.")
     private Location location;
 
-    @NotNull
+    @NotNull(message = "'paid' field cannot be null.")
     private Boolean paid;
 
-    @NotNull
-    @Positive
+    @NotNull(message = "'participantLimit' field cannot be null.")
+    @PositiveOrZero(message = "'participantLimit' must be positive or zero.")
     private Integer participantLimit;
 
-    @NotNull
+    @NotNull(message = "'requestModeration' field cannot be null.")
     private Boolean requestModeration;
 
-    @NotNull
+    @NotNull(message = "'status' field cannot be null.")
     private EventStatus status;
 
-    @NotBlank
+    @NotBlank(message = "'title' field cannot be empty.")
     private String title;
 }

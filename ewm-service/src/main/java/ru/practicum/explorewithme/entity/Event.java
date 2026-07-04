@@ -27,7 +27,8 @@ public class Event {
     private Category category;
 
     @Column(name = "conf_req")
-    private int confirmedRequests;
+    @Builder.Default
+    private int confirmedRequests = 0;
 
     @Column(name = "created", nullable = false)
     private LocalDateTime createdOn;
@@ -52,7 +53,8 @@ public class Event {
     private int participantLimit;
 
     @Column(name = "published", nullable = false)
-    private LocalDateTime publishedOn;
+    @Builder.Default
+    private LocalDateTime publishedOn = null;
 
     @Column(name = "request_moderation")
     private boolean requestModeration;

@@ -1,7 +1,7 @@
 package ru.practicum.explorewithme.dto;
 
-public enum EventStatus {
+public enum RequestStatus {
     PENDING,
-    PUBLISHED,
-    CANCELLED
+    CONFIRMED,
+    REJECTED
 }
