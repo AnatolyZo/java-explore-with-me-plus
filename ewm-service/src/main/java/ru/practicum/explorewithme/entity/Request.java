@@ -18,10 +18,13 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(name = "created")
     private LocalDateTime created;
 
+    @Column(name = "event_id")
     private long eventId;
 
+    @Column(name = "requester_id")
     private long requesterId;
 
     @Enumerated(EnumType.STRING)

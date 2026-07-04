@@ -8,5 +8,5 @@ import java.util.List;
 public interface RequestRepository extends JpaRepository<Request, Long> {
     List<Request> findByEventId(long eventId);
 
-    List<Request> findByRequestIdIn(List<Long> requestIds);
+    List<Request> findByRequesterIdIn(List<Long> requestIds);
 }

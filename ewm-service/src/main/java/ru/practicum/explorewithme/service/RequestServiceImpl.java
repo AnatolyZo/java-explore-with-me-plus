@@ -30,7 +30,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public List<RequestDto> changeRequestStatuses(List<Long> requestIds, RequestStatus status) {
-        List<Request> requests = requestRepository.findByRequestIdIn(requestIds);
+        List<Request> requests = requestRepository.findByRequesterIdIn(requestIds);
 
         Optional<Long> nonPendingRequestId = requests.stream()
                 .filter(request -> !request.getStatus().equals(RequestStatus.PENDING))
@@ -52,7 +52,7 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public List<RequestDto> getRequestsByIds(List<Long> requestIds) {
-        List<Request> requests = requestRepository.findByRequestIdIn(requestIds);
+        List<Request> requests = requestRepository.findByRequesterIdIn(requestIds);
         return requests.stream()
                 .map(RequestMapper::mapToRequestDto)
                 .toList();
