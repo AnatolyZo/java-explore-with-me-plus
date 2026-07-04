@@ -13,37 +13,27 @@ import java.time.LocalDateTime;
 @Builder
 @Getter
 @ToString
-public class NewEventDto {
-    @NotBlank
+public class UpdateEventDto {
     private String annotation;
 
-    @NotNull
     @Positive
     private Long category;
 
-    @NotBlank
     private String description;
 
-    @NotNull
     @DateIsNotEarly
     private LocalDateTime eventDate;
 
-    @NotNull
     private Location location;
 
-    @NotNull
     private Boolean paid;
 
-    @NotNull
     @Positive
     private Integer participantLimit;
 
-    @NotNull
     private Boolean requestModeration;
 
-    @NotNull
-    private EventStatus status;
+    private EventUpdateAction status;
 
-    @NotBlank
     private String title;
 }

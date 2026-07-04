@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.NewEventDto;
-import ru.practicum.explorewithme.dto.RequestDto;
-import ru.practicum.explorewithme.dto.UpdateRequestStatusDto;
+import ru.practicum.explorewithme.dto.*;
 import ru.practicum.explorewithme.service.EventService;
 
 import java.util.List;
@@ -45,9 +42,9 @@ public class PrivateEventController {
     @PatchMapping("/{eventId}")
     public ResponseEntity<EventDto> updateEvent(@PathVariable long userId,
                                                 @PathVariable long eventId,
-                                                @RequestBody NewEventDto newEventDto) {
+                                                @Valid @RequestBody UpdateEventDto updateEventDto) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(eventService.updateEvent(userId, eventId, newEventDto));
+                .body(eventService.updateEvent(userId, eventId, updateEventDto));
     }
 
     @GetMapping("/{eventId}/requests")

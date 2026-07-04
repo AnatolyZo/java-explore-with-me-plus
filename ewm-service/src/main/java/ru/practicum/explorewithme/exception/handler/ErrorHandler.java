@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
 import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.validation.DateIsNotEarly;
 
 import java.lang.reflect.Method;
@@ -81,5 +82,10 @@ public class ErrorHandler {
     @ExceptionHandler
     public ResponseEntity<ApiError> notEmptyCategory(NotEmptyCategoryException e) {
         return createErrorResponse("trying delete category with events", e.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
+        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.FORBIDDEN);
     }
 }

@@ -1,9 +1,6 @@
 package ru.practicum.explorewithme.service;
 
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.NewEventDto;
-import ru.practicum.explorewithme.dto.RequestDto;
-import ru.practicum.explorewithme.dto.UpdateRequestStatusDto;
+import ru.practicum.explorewithme.dto.*;
 import ru.practicum.explorewithme.entity.Event;
 
 import java.util.List;
@@ -15,7 +12,7 @@ public interface EventService {
 
     EventDto getEvent(long userId, long eventId);
 
-    EventDto updateEvent(long userId, long eventId, NewEventDto newEventDto);
+    EventDto updateEvent(long userId, long eventId, UpdateEventDto updateEventDto);
 
     List<RequestDto> getRequests(long userId, long eventId);
 
