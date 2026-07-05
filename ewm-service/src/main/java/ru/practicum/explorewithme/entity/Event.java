@@ -52,7 +52,7 @@ public class Event {
     @Column(name = "participant_limit")
     private int participantLimit;
 
-    @Column(name = "published", nullable = false)
+    @Column(name = "published")
     @Builder.Default
     private LocalDateTime publishedOn = null;
 
@@ -60,6 +60,7 @@ public class Event {
     private boolean requestModeration;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     private EventStatus status;
 
     @Column(name = "title", nullable = false)

@@ -264,8 +264,8 @@ public class EventServiceImpl implements EventService {
     }
 
     private void checkTimeBeforeEventStart(LocalDateTime eventDate) {
-        Duration minOffset = Duration.ofHours(2);
-        if (!eventDate.isBefore(LocalDateTime.now().plus(minOffset))) {
+        Duration minOffset = Duration.ofHours(1);
+        if (!eventDate.isAfter(LocalDateTime.now().plus(minOffset))) {
             throw new EarlyDateException(eventDate);
         }
     }

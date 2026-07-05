@@ -1,5 +1,7 @@
 package ru.practicum.explorewithme.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -14,15 +16,19 @@ public class EventDto {
     private String annotation;
     private long category;
     private int confirmedRequests;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdOn;
     private String description;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     private UserShortDto initiator;
     private Location location;
     private boolean paid;
     private int participantLimit;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishedOn;
     private boolean requestModeration;
+    @JsonProperty("state")
     private EventStatus status;
     private String title;
     private long views;
