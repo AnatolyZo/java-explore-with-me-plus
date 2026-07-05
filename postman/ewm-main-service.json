@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "247a82db-b09d-4c6f-b644-cc96a0a20c9e",
-    "name": "Test Explore With Me Admin Categories",
+    "_postman_id": "e85920ef-77c9-478c-aeaa-c0b0341594e5",
+    "name": "Test Explore With Me Categories",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "52835777",
-    "_collection_link": "https://go.postman.co/collection/52835777-247a82db-b09d-4c6f-b644-cc96a0a20c9e?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/52835777-e85920ef-77c9-478c-aeaa-c0b0341594e5?source=collection_link"
   },
   "item": [
     {
@@ -13,6 +13,75 @@
         {
           "name": "Category",
           "item": [
+            {
+              "name": "Required query params",
+              "item": []
+            },
+            {
+              "name": "Unrequired params in body",
+              "item": [
+                {
+                  "name": "Получение категорий без нескольких Query params",
+                  "event": [
+                    {
+                      "listen": "prerequest",
+                      "script": {
+                        "exec": [
+                          ""
+                        ],
+                        "type": "text/javascript"
+                      }
+                    },
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Ответ должен содержать код статуса 200 и данные в формате json\", function () {\r",
+                          "    pm.response.to.be.ok;    \r",
+                          "    pm.response.to.be.withBody;\r",
+                          "    pm.response.to.be.json;\r",
+                          "});"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/categories",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "categories"
+                      ],
+                      "query": [
+                        {
+                          "key": "from",
+                          "value": "0",
+                          "description": "количество категорий, которые нужно пропустить для формирования текущего набора",
+                          "disabled": true
+                        },
+                        {
+                          "key": "size",
+                          "value": "10000",
+                          "description": "количество категорий в наборе",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
             {
               "name": "Required params in body",
               "item": [
@@ -716,6 +785,114 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Default values check",
+              "item": [
+                {
+                  "name": "Проверка на значения по-умолчанию from и size(category)",
+                  "event": [
+                    {
+                      "listen": "prerequest",
+                      "script": {
+                        "exec": [
+                          "const main = async () => {\r",
+                          "    const api = new API(pm);\r",
+                          "    const rnd = new RandomUtils();\r",
+                          "\r",
+                          "    try {\r",
+                          "        for (let i = 0; i < 11; i++){\r",
+                          "            await api.addCategory(rnd.getCategory());\r",
+                          "        }\r",
+                          "        await pm.sendRequest({\r",
+                          "            url : \"http://localhost:8080/categories?from=0\",\r",
+                          "            method : \"GET\",\r",
+                          "            header: { \"Content-Type\": \"application/json\" }\r",
+                          "        }, (error, response) => {pm.collectionVariables.set('source', response.json())});\r",
+                          "    } catch(err) {\r",
+                          "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                          "    }\r",
+                          "};\r",
+                          "\r",
+                          "const interval = setInterval(() => {}, 1000);\r",
+                          "\r",
+                          "setTimeout(async () => \r",
+                          "    {\r",
+                          "        try {\r",
+                          "            await main();\r",
+                          "        } catch (e) {\r",
+                          "            console.error(e);\r",
+                          "        } finally {\r",
+                          "            clearInterval(interval);\r",
+                          "        }\r",
+                          "    },  \r",
+                          "    100 \r",
+                          ");"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    },
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Ответ должен содержать код статуса 200 и данные в формате json\", function () {\r",
+                          "    pm.response.to.be.ok;    \r",
+                          "    pm.response.to.be.withBody;\r",
+                          "    pm.response.to.be.json;\r",
+                          "});\r",
+                          "\r",
+                          "const target = pm.response.json();\r",
+                          "const source = pm.collectionVariables.get('source');\r",
+                          "\r",
+                          "pm.test(\"Значение from по-умолчанию должно быть равным 0\", function () {\r",
+                          "    pm.expect(target[0].id).to.be.equal(source[0].id, 'Запросы с from=0 и без него должны начинаться с одного и того же события');\r",
+                          "});\r",
+                          "\r",
+                          "pm.test(\"Значение size по-умолчанию должно быть равным 10\", function () {\r",
+                          "    pm.expect(target.length).to.be.equal(10);\r",
+                          "});\r",
+                          ""
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/categories",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "categories"
+                      ],
+                      "query": [
+                        {
+                          "key": "from",
+                          "value": "0",
+                          "description": "количество категорий, которые нужно пропустить для формирования текущего набора",
+                          "disabled": true
+                        },
+                        {
+                          "key": "size",
+                          "value": "1000",
+                          "description": "количество категорий в наборе",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         }
@@ -919,6 +1096,88 @@
           "response": []
         },
         {
+          "name": "Удаление категории с привязанными событиями",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    try {\r",
+                  "        const category = await api.addCategory(rnd.getCategory());\r",
+                  "        const user = await api.addUser(rnd.getUser());\r",
+                  "        const event = await api.addEvent(user.id, rnd.getEvent(category.id));\r",
+                  "        pm.collectionVariables.set('catid', category.id);\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Ответ должен содержать код статуса 409 и данные в формате json\", function () {\r",
+                  "    pm.response.to.have.status(409);\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/categories/:catId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "categories",
+                ":catId"
+              ],
+              "variable": [
+                {
+                  "key": "catId",
+                  "value": "{{catid}}"
+                }
+              ]
+            },
+            "description": "Обратите внимание: с категорий не должно быть связано ни одного события."
+          },
+          "response": []
+        },
+        {
           "name": "Изменение имени категории на уже занятое",
           "event": [
             {
@@ -1111,6 +1370,293 @@
               ]
             },
             "description": "Обратите внимание: имя категории должно быть уникальным"
+          },
+          "response": []
+        },
+        {
+          "name": "Получение категорий",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    try {\r",
+                  "        const category = await api.addCategory(rnd.getCategory());\r",
+                  "        pm.collectionVariables.set(\"response\", category)\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Ответ должен содержать код статуса 200 и данные в формате json\", function () {\r",
+                  "    pm.response.to.be.ok;    \r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "const source = pm.collectionVariables.get('response');\r",
+                  "const target = pm.response.json();\r",
+                  "let founded;\r",
+                  "target.forEach(function(element){if (element.id == source.id) founded = element});\r",
+                  "\r",
+                  "pm.test(\"Категория должна содержать поля: id, name\", function () {\r",
+                  "pm.expect(target[0]).to.have.property('id');\r",
+                  "pm.expect(target[0]).to.have.property('name');\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Данные в ответе должны соответствовать данным в запросе\", function () {\r",
+                  "    pm.expect(source.id).equal(founded.id, 'Идентификатор категории должен соответствовать идентификатору категории добавленной ранее');\r",
+                  "    pm.expect(source.name).equal(founded.name, 'Название категории должно соответствовать названию категории добавленной ранее');\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories?from=0&size=1000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "0",
+                  "description": "количество категорий, которые нужно пропустить для формирования текущего набора"
+                },
+                {
+                  "key": "size",
+                  "value": "1000",
+                  "description": "количество категорий в наборе"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение информации о категории по её идентификатору",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    try {\r",
+                  "        const category = await api.addCategory(rnd.getCategory());\r",
+                  "        pm.collectionVariables.set(\"response\", category)\r",
+                  "        pm.collectionVariables.set(\"catid\", category.id)\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Ответ должен содержать код статуса 200 и данные в формате json\", function () {\r",
+                  "    pm.response.to.be.ok;    \r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "const source = pm.collectionVariables.get('response');\r",
+                  "const target = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Категория должна содержать поля: id, name\", function () {\r",
+                  "pm.expect(target).to.have.property('id');\r",
+                  "pm.expect(target).to.have.property('name');\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Данные в ответе должны соответствовать данным в запросе\", function () {\r",
+                  "    pm.expect(source.id).equal(target.id, 'Идентификатор категории должен соответствовать идентификатору в запросе');\r",
+                  "    pm.expect(source.name).equal(target.name, 'Название категории должно соответствовать названию категории с указанным идентификатором');\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/:catId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                ":catId"
+              ],
+              "variable": [
+                {
+                  "key": "catId",
+                  "value": "{{catid}}",
+                  "description": "(Required) id категории"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Удаление категории",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    try {\r",
+                  "        const category = await api.addCategory(rnd.getCategory());\r",
+                  "        const findedCategory = await api.findCategory(category.id);\r",
+                  "        pm.collectionVariables.set(\"catid\", category.id)\r",
+                  "        pm.collectionVariables.set(\"response\", findedCategory)\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Ответ должен содержать код статуса 204\", function () {\r",
+                  "    pm.response.to.have.status(204);\r",
+                  "});\r",
+                  "\r",
+                  "source = pm.collectionVariables.get('response');\r",
+                  "catId = pm.collectionVariables.get('catid');\r",
+                  "\r",
+                  "pm.test(\"Категория должна быть найдена до удаления\", function () {\r",
+                  "    pm.expect(source.id).equal(catId, 'Идентификтор категории должен совпадать с удаляемым');\r",
+                  "});\r",
+                  "\r",
+                  "pm.sendRequest({\r",
+                  "        url: pm.collectionVariables.get(\"baseUrl\") + \"/categories/\" + catId,\r",
+                  "        method: 'GET',\r",
+                  "    }, (error, response) => {\r",
+                  "        pm.test(\"Категория не должна быть найдена после удаления\", function () {\r",
+                  "            pm.expect(response.code).to.eql(404);\r",
+                  "        });\r",
+                  "    });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/categories/:catId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "categories",
+                ":catId"
+              ],
+              "variable": [
+                {
+                  "key": "catId",
+                  "value": "{{catid}}"
+                }
+              ]
+            },
+            "description": "Обратите внимание: с категорий не должно быть связано ни одного события."
           },
           "response": []
         },

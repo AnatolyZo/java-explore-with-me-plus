@@ -15,6 +15,8 @@ import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -85,5 +87,19 @@ public class CategoryServiceImpl implements CategoryService {
     private Category findCategoryBy(long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("category", id));
+    }
+
+    @Override
+    public List<CategoryDto> getCategories(int from, int size) {
+        List<Category> result = categoryRepository.findWithOffset(from, size);
+        return result.stream()
+                .map(CategoryMapper::toCategoryDto)
+                .toList();
+    }
+
+    @Override
+    public CategoryDto getCategory(long catId) {
+        Category result = findCategoryBy(catId);
+        return CategoryMapper.toCategoryDto(result);
     }
 }
