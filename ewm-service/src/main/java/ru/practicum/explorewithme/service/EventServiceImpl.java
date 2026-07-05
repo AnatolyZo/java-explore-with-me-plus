@@ -140,6 +140,7 @@ public class EventServiceImpl implements EventService {
 
             return ChangedRequestStatusesDto.builder()
                     .confirmedRequests(confirmedRequests)
+                    .rejectedRequests(List.of())
                     .build();
         }
 
@@ -250,7 +251,7 @@ public class EventServiceImpl implements EventService {
             event.setRequestModeration(update.getRequestModeration());
         }
 
-        event.setAnnotation(status.name());
+        event.setStatus(status);
 
         if (update.getTitle() != null && !update.getTitle().isEmpty()) {
             event.setTitle(update.getTitle());

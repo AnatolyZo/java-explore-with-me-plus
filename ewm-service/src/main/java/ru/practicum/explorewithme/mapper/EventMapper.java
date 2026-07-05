@@ -31,6 +31,7 @@ public class EventMapper {
         Location location = LocationMapper.mapToLocation(body.getLocation().getLat(), body.getLocation().getLon());
 
         return EventDto.builder()
+                .id(body.getId())
                 .annotation(body.getAnnotation())
                 .category(body.getCategory().getId())
                 .confirmedRequests(body.getConfirmedRequests())

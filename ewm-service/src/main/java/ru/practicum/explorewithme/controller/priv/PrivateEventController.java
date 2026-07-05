@@ -18,7 +18,7 @@ import java.util.List;
 public class PrivateEventController {
     public static final String URL_BASE = ExploreWithMeMainService.URL_PRIVATE + "/events";
     public static final String EVENT_ID = "eventId";
-    private static final String API_PREFIX_REQUESTS = "/requests";
+    public static final String API_PREFIX_REQUESTS = "/requests";
     private final EventService eventService;
 
     @GetMapping

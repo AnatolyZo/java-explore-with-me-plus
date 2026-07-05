@@ -41,9 +41,6 @@ public class NewEventDto {
     @NotNull(message = "'requestModeration' field cannot be null.")
     private Boolean requestModeration;
 
-//    @NotNull(message = "'status' field cannot be null.")
-//    private EventStatus status;
-
     @NotBlank(message = "'title' field cannot be empty.")
     @Size(min = 3, max = 120, message = "Title must be between 3 and 120 characters")
     private String title;
