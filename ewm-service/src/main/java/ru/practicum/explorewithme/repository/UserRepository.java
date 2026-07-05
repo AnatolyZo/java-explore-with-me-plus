@@ -1,8 +1,8 @@
-package ru.practicum.explorewithme.user.repository;
+package ru.practicum.explorewithme.repository;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import ru.practicum.explorewithme.user.entity.User;
+import ru.practicum.explorewithme.entity.User;
 
 import java.util.Collection;
 import java.util.List;

@@ -10,10 +10,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotFoundException;
-import ru.practicum.explorewithme.user.dto.NewUserRequest;
-import ru.practicum.explorewithme.user.dto.UserDto;
-import ru.practicum.explorewithme.user.entity.User;
-import ru.practicum.explorewithme.user.repository.UserRepository;
+import ru.practicum.explorewithme.service.UserServiceImpl;
+import ru.practicum.explorewithme.dto.NewUserRequest;
+import ru.practicum.explorewithme.dto.UserDto;
+import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
