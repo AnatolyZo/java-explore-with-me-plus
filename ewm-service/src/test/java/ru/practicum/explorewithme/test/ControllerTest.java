@@ -50,6 +50,14 @@ public class ControllerTest extends TestBase {
         }
     }
 
+    protected ResultActions performGet(String url) {
+        try {
+            return mockMvc.perform(MockMvcRequestBuilders.get(url));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     protected void expectStatusOk(ResultActions actions) {
         expect(actions, MockMvcResultMatchers.status().isOk());
     }
