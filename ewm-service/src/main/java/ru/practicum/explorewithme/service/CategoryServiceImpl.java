@@ -85,14 +85,10 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category findCategoryBy(long id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("category", id));
-    }
-
-    @Override
     public List<CategoryDto> getCategories(int from, int size) {
+        log.trace("Инициировано получение категорий с параметрами from={} и size={}", from, size);
         List<Category> result = categoryRepository.findWithOffset(from, size);
+        log.debug("Найдено {} категорий", result.size());
         return result.stream()
                 .map(CategoryMapper::toCategoryDto)
                 .toList();
@@ -100,7 +96,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto getCategory(long catId) {
+        log.trace("Инициировано получение категории с id={}", catId);
         Category result = findCategoryBy(catId);
+        log.debug("Найдена категория {}", result);
         return CategoryMapper.toCategoryDto(result);
+    }
+
+    @Override
+    public Category findCategoryBy(long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("category", id));
     }
 }
