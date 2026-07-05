@@ -1,4 +1,4 @@
-package ru.practicum.explorewithme.admin.user.controller;
+package ru.practicum.explorewithme.controller.admin;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.explorewithme.user.dto.NewUserRequest;
-import ru.practicum.explorewithme.user.dto.UserDto;
-import ru.practicum.explorewithme.user.service.UserService;
+import ru.practicum.explorewithme.dto.NewUserRequest;
+import ru.practicum.explorewithme.dto.UserDto;
+import ru.practicum.explorewithme.service.UserService;
 
 import java.util.List;
 

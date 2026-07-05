@@ -1,0 +1,426 @@
+package ru.practicum.explorewithme.service;
+
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import ru.practicum.explorewithme.StatsClient;
+import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.entity.Category;
+import ru.practicum.explorewithme.entity.Event;
+import ru.practicum.explorewithme.entity.LocationEmbeddable;
+import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.EarlyDateException;
+import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.UnavailableUpdateException;
+import ru.practicum.explorewithme.repository.EventRepository;
+import ru.practicum.explorewithme.stats.ViewStatsResponse;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@Slf4j
+@ExtendWith(MockitoExtension.class)
+class PrivateEventServiceTests {
+
+    @InjectMocks
+    private EventServiceImpl eventService;
+
+    @Mock
+    private EventRepository eventRepository;
+
+    @Mock
+    private CategoryService categoryService;
+
+    @Mock
+    private UserService userService;
+
+    @Mock
+    private RequestService requestService;
+
+    @Mock
+    private StatsClient statsClient;
+
+    private static final long USER_ID = 1L;
+    private static final long EVENT_ID = 1L;
+    private static final long CATEGORY_ID = 1L;
+
+    private NewEventDto newEventDto;
+    private UpdateEventDto updateEventDto;
+    private UpdateRequestStatusDto updateRequestStatusDto;
+
+    @BeforeEach
+    void setUp() {
+        Location location = new Location(1.0, 1.0);
+        newEventDto = NewEventDto.builder()
+                .title("Event Title")
+                .description("Description")
+                .annotation("Annotation")
+                .category(1L)
+                .eventDate(LocalDateTime.now().plusHours(3))
+                .location(location)
+                .paid(false)
+                .participantLimit(10)
+                .requestModeration(true)
+                .build();
+
+        updateEventDto = UpdateEventDto.builder()
+                .title("Updated Title")
+                .status(EventUpdateAction.UPDATE)
+                .build();
+
+        updateRequestStatusDto = UpdateRequestStatusDto.builder()
+                .status(RequestStatus.CONFIRMED)
+                .requestIds(List.of(1L, 2L))
+                .build();
+    }
+
+
+    @Test
+    void getEvents_returnsListWithStats() {
+        int from = 0;
+        int size = 5;
+
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
+
+        List<Event> events = List.of(event);
+
+        String targetUri = "/events/" + event.getId();
+
+        ViewStatsResponse stats = new ViewStatsResponse(null, targetUri, 7L);
+        List<ViewStatsResponse> statsList = List.of(stats);
+
+        when(eventRepository.findByInitiatorId(eq(USER_ID), any(Pageable.class)))
+                .thenReturn(events);
+
+        when(statsClient.getStatistics(
+                any(LocalDateTime.class),
+                any(LocalDateTime.class),
+                anyList(),
+                eq(false)))
+                .thenReturn(statsList);
+
+        List<EventDto> result = eventService.getEvents(USER_ID, from, size);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(event.getId());
+        assertThat(result.get(0).getViews()).isEqualTo(7L);
+
+        verify(eventRepository).findByInitiatorId(eq(USER_ID), any(Pageable.class));
+        verify(statsClient).getStatistics(any(), any(), any(), eq(false));
+    }
+
+    @Test
+    void createEvent_createsEventWithCorrectFields() {
+        NewEventDto request = createTestNewEventDto(CATEGORY_ID, LocalDateTime.now().plusHours(3));
+
+        Event expectedEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
+        Category category = createTestCategory(CATEGORY_ID);
+        User initiator = createTestUser(USER_ID);
+
+        when(categoryService.findCategoryBy(newEventDto.getCategory())).thenReturn(category);
+        when(userService.getUserById(USER_ID)).thenReturn(initiator);
+        when(eventRepository.save(any(Event.class))).thenReturn(expectedEvent);
+
+        EventDto result = eventService.createEvent(USER_ID, newEventDto);
+
+        assertThat(result.getId()).isEqualTo(expectedEvent.getId());
+        assertThat(result.getStatus()).isEqualTo(EventStatus.PENDING);
+
+        verify(categoryService).findCategoryBy(newEventDto.getCategory());
+        verify(userService).getUserById(USER_ID);
+        verify(eventRepository).save(any(Event.class));
+    }
+
+    @Test
+    void createEvent_throwsEarlyDateException_whenEventIsTooSoon() {
+        NewEventDto badEventDto = createTestNewEventDto(CATEGORY_ID, LocalDateTime.now().plusHours(1));
+
+        assertThrows(EarlyDateException.class, () -> eventService.createEvent(USER_ID, badEventDto));
+    }
+
+    @Test
+    void getEvent_returnsEventDtoWithStats() {
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
+
+        String uri = "/events/" + EVENT_ID;
+
+        ViewStatsResponse stats = new ViewStatsResponse(null, uri, 5L);
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(event));
+        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false)))
+                .thenReturn(List.of(stats));
+
+        EventDto result = eventService.getEvent(USER_ID, EVENT_ID);
+
+        assertThat(result.getId()).isEqualTo(EVENT_ID);
+        assertThat(result.getViews()).isEqualTo(5L);
+
+        verify(eventRepository).findByIdAndInitiatorId(EVENT_ID, USER_ID);
+        verify(statsClient).getStatistics(any(), any(), anyList(), eq(false));
+    }
+
+    @Test
+    void getEvent_throwsNotFoundException_whenEventDoesNotBelongToUser() {
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> eventService.getEvent(USER_ID, EVENT_ID));
+    }
+
+    @Test
+    void updateEvent_updatesEventFields_whenStatusAllows() {
+        Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
+
+        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.UPDATE);
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
+        when(eventRepository.save(existingEvent)).thenReturn(existingEvent);
+
+        String uri = "/events/" + EVENT_ID;
+        ViewStatsResponse stats = new ViewStatsResponse(null, uri, 3L);
+        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false)))
+                .thenReturn(List.of(stats));
+
+        EventDto result = eventService.updateEvent(USER_ID, EVENT_ID, update);
+
+        assertThat(result.getTitle()).isEqualTo("Updated Event Title");
+        assertThat(result.getDescription()).isEqualTo("Updated detailed description that satisfies the 20–7000 character size constraint.");
+        assertThat(result.isPaid()).isEqualTo(true);
+
+        verify(eventRepository).save(existingEvent);
+    }
+
+    @Test
+    void updateEvent_throwsUnavailableUpdateException_whenStatusDoesNotAllowUpdate() {
+        Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED);
+
+        UpdateEventDto update = UpdateEventDto.builder().build();
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
+
+        assertThrows(UnavailableUpdateException.class,
+                () -> eventService.updateEvent(USER_ID, EVENT_ID, update));
+    }
+
+    @Test
+    void updateEvent_cancelsEvent_whenStatusActionIsCancel() {
+        Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
+
+        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.CANCEL);
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
+        when(eventRepository.save(existingEvent)).thenReturn(existingEvent);
+
+        String uri = "/events/" + EVENT_ID;
+        ViewStatsResponse stats = new ViewStatsResponse(null, uri, 0L);
+        when(statsClient.getStatistics(any(), any(), anyList(), eq(false))).thenReturn(List.of(stats));
+
+        EventDto result = eventService.updateEvent(USER_ID, EVENT_ID, update);
+
+        assertThat(existingEvent.getStatus()).isEqualTo(EventStatus.CANCELLED);
+        assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELLED);
+    }
+
+    @Test
+    void getRequests_returnsRequestsFromRequestService() {
+        long requestId = 10L;
+        RequestDto requestDto = createTestRequestDto(requestId, EVENT_ID, USER_ID, RequestStatus.PENDING);
+        List<RequestDto> requests = List.of(requestDto);
+
+        when(eventRepository.existsByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(true);
+        when(requestService.getRequestsToUsersEvent(EVENT_ID)).thenReturn(requests);
+
+        List<RequestDto> result = eventService.getRequests(USER_ID, EVENT_ID);
+
+        assertThat(result).isEqualTo(requests);
+        verify(requestService).getRequestsToUsersEvent(EVENT_ID);
+    }
+
+    @Test
+    void getRequests_throwsNotFoundException_whenEventDoesNotExist() {
+        when(eventRepository.existsByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(false);
+
+        assertThrows(NotFoundException.class, () -> eventService.getRequests(USER_ID, EVENT_ID));
+    }
+
+    @Test
+    void updateRequestStatuses_confirmsSomeAndRejectsOthers_whenLimitReached() {
+        long requestId1 = 1L;
+        long requestId2 = 2L;
+        long requestId3 = 3L;
+        List<Long> ids = List.of(requestId1, requestId2, requestId3);
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED);
+        event.setParticipantLimit(3);
+        event.setConfirmedRequests(2);
+
+        RequestDto req1 = createTestRequestDto(requestId1, EVENT_ID, 1, RequestStatus.PENDING);
+        RequestDto req2 = createTestRequestDto(requestId2, EVENT_ID, 2, RequestStatus.PENDING);
+        RequestDto req3 = createTestRequestDto(requestId3, EVENT_ID, 3, RequestStatus.PENDING);
+
+        UpdateRequestStatusDto update = createTestUpdateRequestStatusDto(ids, RequestStatus.CONFIRMED);
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(event));
+
+        RequestDto confirmed = createTestRequestDto(requestId1, EVENT_ID, 1, RequestStatus.CONFIRMED);;
+        RequestDto rejected1 = createTestRequestDto(requestId2, EVENT_ID, 2, RequestStatus.REJECTED);
+        RequestDto rejected2 = createTestRequestDto(requestId3, EVENT_ID, 3, RequestStatus.REJECTED);
+
+        when(requestService.changeRequestStatuses(List.of(1L), RequestStatus.CONFIRMED))
+                .thenReturn(List.of(confirmed));
+        when(requestService.changeRequestStatuses(List.of(2L, 3L), RequestStatus.REJECTED))
+                .thenReturn(List.of(rejected1, rejected2));
+
+        String uri = "/events/" + EVENT_ID;
+
+        ChangedRequestStatusesDto result = eventService.updateRequestStatuses(USER_ID, EVENT_ID, update);
+
+        assertThat(result.getConfirmedRequests()).hasSize(1).contains(confirmed);
+        assertThat(result.getRejectedRequests()).hasSize(2).contains(rejected1, rejected2);
+        assertThat(event.getConfirmedRequests()).isEqualTo(3);
+
+        verify(eventRepository).save(event);
+    }
+
+    @Test
+    void updateRequestStatuses_rejectsAll_whenNoSpotsAvailable() {
+        long requestId1 = 1L;
+        long requestId2 = 2L;
+        long requestId3 = 3L;
+        List<Long> ids = List.of(requestId1, requestId2, requestId3);
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED);
+        event.setParticipantLimit(2);
+        event.setConfirmedRequests(2);
+
+        UpdateRequestStatusDto update = createTestUpdateRequestStatusDto(ids, RequestStatus.CONFIRMED);
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(event));
+
+        assertThrows(UnavailableUpdateException.class,
+                () -> eventService.updateRequestStatuses(USER_ID, EVENT_ID, update));
+    }
+
+    @Test
+    void updateRequestStatuses_allowsAll_whenNoLimitOrNoModeration() {
+        long requestId1 = 1L;
+        long requestId2 = 2L;
+        long requestId3 = 3L;
+        List<Long> ids = List.of(requestId1, requestId2, requestId3);
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED);
+        event.setParticipantLimit(0);
+        event.setRequestModeration(false);
+
+        UpdateRequestStatusDto update = createTestUpdateRequestStatusDto(ids, RequestStatus.CONFIRMED);
+
+        RequestDto confirmed1 = createTestRequestDto(requestId1, EVENT_ID, 1, RequestStatus.CONFIRMED);;
+        RequestDto confirmed2 = createTestRequestDto(requestId2, EVENT_ID, 2, RequestStatus.CONFIRMED);
+        RequestDto confirmed3 = createTestRequestDto(requestId3, EVENT_ID, 3, RequestStatus.CONFIRMED);
+
+        when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(event));
+        when(requestService.getRequestsByIds(update.getRequestIds())).thenReturn(List.of(confirmed1, confirmed2, confirmed3));
+
+        String uri = "/events/" + EVENT_ID;
+
+        ChangedRequestStatusesDto result = eventService.updateRequestStatuses(USER_ID, EVENT_ID, update);
+        System.out.println(result);
+        assertThat(result.getConfirmedRequests()).containsExactlyInAnyOrder(confirmed1, confirmed2, confirmed3);
+        assertThat(result.getRejectedRequests()).isEmpty();
+
+        verify(eventRepository, never()).save(event);
+    }
+
+    private Event createTestEvent(long eventId, long userId, long categoryId, EventStatus status) {
+        Category category = createTestCategory(categoryId);
+        User initiator = createTestUser(userId);
+        LocationEmbeddable location = new LocationEmbeddable(1.0, 1.0);
+
+        return Event.builder()
+                .id(eventId)
+                .annotation("Test annotation")
+                .category(category)
+                .confirmedRequests(0)
+                .createdOn(LocalDateTime.now())
+                .description("Test description")
+                .eventDate(LocalDateTime.now().plusHours(3))
+                .initiator(initiator)
+                .location(location)
+                .paid(false)
+                .participantLimit(10)
+                .publishedOn(null)
+                .requestModeration(true)
+                .status(status)
+                .title("Test Event Title")
+                .views(7L)
+                .build();
+    }
+
+    private Category createTestCategory(long categoryId) {
+        return Category.builder()
+                .id(categoryId)
+                .name("Test Category")
+                .build();
+    }
+
+    private User createTestUser(long userId) {
+        return User.builder()
+                .id(userId)
+                .name("Test User")
+                .email("test" + userId + "@example.com")
+                .build();
+    }
+
+    private NewEventDto createTestNewEventDto(Long categoryId, LocalDateTime time) {
+        return NewEventDto.builder()
+                .annotation("Test annotation for event creation. It must be at least 20 characters long, so we are adding some extra text here to meet the requirement.")
+                .category(categoryId)
+                .description("Detailed description of the event. Validation requires minimum 20 characters, so this sentence is intentionally long enough to pass the Size constraint.")
+                .eventDate(time)
+                .location(new Location(55.7558, 37.6176))
+                .paid(false)
+                .participantLimit(10)
+                .requestModeration(true)
+                .title("Test Event Title")
+                .build();
+    }
+
+    private UpdateEventDto createTestUpdateEventDto(EventUpdateAction action) {
+        return UpdateEventDto.builder()
+                .annotation("Updated annotation text that meets the minimum length of 20 characters requirement for validation.")
+                .category(2L)
+                .description("Updated detailed description that satisfies the 20–7000 character size constraint.")
+                .eventDate(LocalDateTime.now().plusDays(1))
+                .location(new Location(59.9343, 30.3351))
+                .paid(true)
+                .participantLimit(25)
+                .requestModeration(false)
+                .status(action)
+                .title("Updated Event Title")
+                .build();
+    }
+
+    private RequestDto createTestRequestDto(long requestId, long eventId, long requesterId, RequestStatus status) {
+        return RequestDto.builder()
+                .id(requestId)
+                .created(LocalDateTime.now())
+                .eventId(eventId)
+                .requesterId(requesterId)
+                .status(status)
+                .build();
+    }
+
+    private UpdateRequestStatusDto createTestUpdateRequestStatusDto(List<Long> requestIds, RequestStatus status) {
+        return UpdateRequestStatusDto.builder()
+                .requestIds(requestIds)
+                .status(status)
+                .build();
+    }
+}

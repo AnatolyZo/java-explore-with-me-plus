@@ -1,8 +1,8 @@
-package ru.practicum.explorewithme.user.service;
+package ru.practicum.explorewithme.service;
 
-import ru.practicum.explorewithme.user.dto.NewUserRequest;
-import ru.practicum.explorewithme.user.dto.UserDto;
-import ru.practicum.explorewithme.user.entity.User;
+import ru.practicum.explorewithme.dto.NewUserRequest;
+import ru.practicum.explorewithme.dto.UserDto;
+import ru.practicum.explorewithme.entity.User;
 
 import java.util.List;
 

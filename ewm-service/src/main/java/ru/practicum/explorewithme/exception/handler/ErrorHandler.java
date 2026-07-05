@@ -6,9 +6,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.explorewithme.exception.DuplicatedDataException;
-import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.*;
 
 import java.time.LocalDateTime;
 
@@ -36,11 +34,12 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) {
+    public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) throws NoSuchMethodException {
         FieldError fieldError = e.getFieldError();
         if (fieldError == null) {
             return createErrorResponse("incorrect field value", "", HttpStatus.BAD_REQUEST);
         }
+
         return createErrorResponse(
                 "incorrect field value",
                 String.format(
@@ -64,5 +63,15 @@ public class ErrorHandler {
     @ExceptionHandler
     public ResponseEntity<ApiError> notEmptyCategory(NotEmptyCategoryException e) {
         return createErrorResponse("trying delete category with events", e.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
+        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> earlyDate(EarlyDateException e) {
+        return createErrorResponse("date is early", e.getMessage(), HttpStatus.FORBIDDEN);
     }
 }

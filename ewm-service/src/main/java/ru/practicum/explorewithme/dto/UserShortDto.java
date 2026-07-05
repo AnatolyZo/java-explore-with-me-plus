@@ -1,4 +1,4 @@
-package ru.practicum.explorewithme.user.dto;
+package ru.practicum.explorewithme.dto;
 
 import lombok.Builder;
 import lombok.Getter;
