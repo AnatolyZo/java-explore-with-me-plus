@@ -33,7 +33,7 @@ public class EventMapper {
         return EventDto.builder()
                 .id(body.getId())
                 .annotation(body.getAnnotation())
-                .category(body.getCategory().getId())
+                .category(CategoryMapper.toCategoryDto(body.getCategory()))
                 .confirmedRequests(body.getConfirmedRequests())
                 .createdOn(body.getCreatedOn())
                 .description(body.getDescription())
@@ -63,32 +63,6 @@ public class EventMapper {
                 .eventDate(body.getEventDate())
                 .initiator(initiator)
                 .paid(body.isPaid())
-                .title(body.getTitle())
-                .views(views)
-                .build();
-    }
-
-    public static EventFullDto mapToEventFullDto(Event body,
-                                                 long views) {
-        UserShortDto initiator = UserMapper.toUserShortDto(body.getInitiator());
-        Location location = LocationMapper.mapToLocation(body.getLocation().getLat(), body.getLocation().getLon());
-        CategoryDto category = CategoryMapper.toCategoryDto(body.getCategory());
-
-        return EventFullDto.builder()
-                .id(body.getId())
-                .annotation(body.getAnnotation())
-                .category(category)
-                .confirmedRequests(body.getConfirmedRequests())
-                .createdOn(body.getCreatedOn())
-                .description(body.getDescription())
-                .eventDate(body.getEventDate())
-                .initiator(initiator)
-                .location(location)
-                .paid(body.isPaid())
-                .participantLimit(body.getParticipantLimit())
-                .publishedOn(body.getPublishedOn())
-                .requestModeration(body.isRequestModeration())
-                .status(body.getStatus())
                 .title(body.getTitle())
                 .views(views)
                 .build();

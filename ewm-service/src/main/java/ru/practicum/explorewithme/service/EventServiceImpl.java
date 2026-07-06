@@ -241,13 +241,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventFullDto getPublishedEvent(long eventId, String ip, String uri) {
+    public EventDto getPublishedEvent(long eventId, String ip, String uri) {
         saveHit(ip, uri);
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event", eventId));
         long views = getStats(event).getHits();
 
-        return EventMapper.mapToEventFullDto(event, views);
+        return EventMapper.mapToEventDto(event, views);
     }
 
     @Override
@@ -277,13 +277,10 @@ public class EventServiceImpl implements EventService {
     private ViewStatsResponse getStats(Event event) {
         LocalDateTime earliestDate = event.getCreatedOn();
         LocalDateTime now = LocalDateTime.now();
-        String uri = API_PREFIX_EVENTS + event.getId();
+        List<String> uri = List.of(API_PREFIX_EVENTS + event.getId());
 
-        List<ViewStatsResponse> stats = statsClient.getStatistics(earliestDate, now, List.of(uri), false);
-        return stats.stream()
-                .filter(stat -> uri.equals(stat.getUri()))
-                .findFirst()
-                .orElse(new ViewStatsResponse(APP_NAME, uri, 0L));
+        List<ViewStatsResponse> stats = statsClient.getStatistics(earliestDate, now, uri, false);
+        return stats.isEmpty() ? new ViewStatsResponse(APP_NAME, uri.getFirst(), 0L) : stats.getFirst();
     }
 
     private Map<String, Long> getStatsByUri(List<Event> events) {

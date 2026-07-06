@@ -33,5 +33,5 @@ public interface EventService {
                                             String ip,
                                             String uri);
 
-    EventFullDto getPublishedEvent(long eventId, String ip, String uri);
+    EventDto getPublishedEvent(long eventId, String ip, String uri);
 }
