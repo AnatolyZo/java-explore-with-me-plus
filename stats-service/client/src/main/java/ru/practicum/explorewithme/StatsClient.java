@@ -11,6 +11,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.explorewithme.hit.EndpointHitRequest;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -57,7 +58,7 @@ public class StatsClient {
 
         builder.queryParam(PARAM_UNIQUE, String.valueOf(unique));
 
-        String url = builder.toUriString();
+        URI url = builder.build().encode().toUri();
 
         ResponseEntity<List<ViewStatsResponse>> response = restTemplate.exchange(
                 url,
