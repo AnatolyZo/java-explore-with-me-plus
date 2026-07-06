@@ -20,6 +20,7 @@ import java.util.List;
 @Slf4j
 public class StatsClient {
     private final RestTemplate restTemplate;
+    private final String serverUrl;
     private static final String API_PREFIX_HIT = "/hit";
     private static final String API_PREFIX_STATS = "/stats";
     private static final String PARAM_START = "start";
@@ -30,8 +31,9 @@ public class StatsClient {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public StatsClient(String serverUrl, RestTemplateBuilder builder) {
+        this.serverUrl = serverUrl.endsWith("/") ? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
         this.restTemplate = builder
-                .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
+                .uriTemplateHandler(new DefaultUriBuilderFactory(this.serverUrl))
                 .build();
     }
 
@@ -48,7 +50,8 @@ public class StatsClient {
                 start, end, uris, unique);
 
         UriComponentsBuilder builder = UriComponentsBuilder
-                .fromPath(API_PREFIX_STATS)
+                .fromUriString(serverUrl)
+                .path(API_PREFIX_STATS)
                 .queryParam(PARAM_START, DATE_TIME_FORMATTER.format(start))
                 .queryParam(PARAM_END, DATE_TIME_FORMATTER.format(end));
 
