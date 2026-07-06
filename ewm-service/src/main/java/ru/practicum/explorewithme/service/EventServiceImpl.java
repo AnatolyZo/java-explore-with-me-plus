@@ -2,6 +2,8 @@ package ru.practicum.explorewithme.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.StatsClient;
@@ -11,17 +13,24 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.BadRequestException;
 import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.mapper.EventMapper;
 import ru.practicum.explorewithme.mapper.LocationMapper;
 import ru.practicum.explorewithme.repository.EventRepository;
+import ru.practicum.explorewithme.repository.specification.EventSpecifications;
+import ru.practicum.explorewithme.hit.EndpointHitRequest;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +42,7 @@ public class EventServiceImpl implements EventService {
     private final RequestService requestService;
     private final StatsClient statsClient;
     private static final String API_PREFIX_EVENTS = "/events/";
+    private static final String APP_NAME = "ewm-main-service";
 
     @Override
     public List<EventDto> getEvents(long userId, int from, int size) {
@@ -185,6 +195,62 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventShortDto> getPublishedEvents(String text,
+                                                   List<Long> categories,
+                                                   Boolean paid,
+                                                   LocalDateTime rangeStart,
+                                                   LocalDateTime rangeEnd,
+                                                   boolean onlyAvailable,
+                                                   PublicEventSort sort,
+                                                   int from,
+                                                   int size,
+                                                   String ip,
+                                                   String uri) {
+        checkDateRange(rangeStart, rangeEnd);
+        saveHit(ip, uri);
+
+        LocalDateTime start = rangeStart;
+        if (rangeStart == null && rangeEnd == null) {
+            start = LocalDateTime.now();
+        }
+
+        Specification<Event> specification = Specification
+                .where(EventSpecifications.hasStatus(EventStatus.PUBLISHED))
+                .and(EventSpecifications.textContains(text))
+                .and(EventSpecifications.categoryIn(categories))
+                .and(EventSpecifications.paidEquals(paid))
+                .and(EventSpecifications.eventDateFrom(start))
+                .and(EventSpecifications.eventDateTo(rangeEnd))
+                .and(EventSpecifications.onlyAvailable(onlyAvailable));
+
+        Sort eventsSort = sort == PublicEventSort.EVENT_DATE ? Sort.by("eventDate").ascending() : Sort.unsorted();
+        List<Event> events = eventRepository.findAll(specification, eventsSort);
+        Map<String, Long> viewsByUri = getStatsByUri(events);
+
+        List<EventShortDto> dtos = events.stream()
+                .map(event -> EventMapper.mapToEventShortDto(event, getViews(event, viewsByUri)))
+                .toList();
+
+        if (sort == PublicEventSort.VIEWS) {
+            dtos = dtos.stream()
+                    .sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
+                    .toList();
+        }
+
+        return getPage(dtos, from, size);
+    }
+
+    @Override
+    public EventFullDto getPublishedEvent(long eventId, String ip, String uri) {
+        saveHit(ip, uri);
+        Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
+                .orElseThrow(() -> new NotFoundException("Event", eventId));
+        long views = getStats(event).getHits();
+
+        return EventMapper.mapToEventFullDto(event, views);
+    }
+
+    @Override
     public Event getEventById(long eventId, long userId) {
         return eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event", eventId));
@@ -211,10 +277,62 @@ public class EventServiceImpl implements EventService {
     private ViewStatsResponse getStats(Event event) {
         LocalDateTime earliestDate = event.getCreatedOn();
         LocalDateTime now = LocalDateTime.now();
-        List<String> uri = List.of(API_PREFIX_EVENTS + event.getId());
+        String uri = API_PREFIX_EVENTS + event.getId();
 
-        List<ViewStatsResponse> stats = statsClient.getStatistics(earliestDate, now, uri, false);
-        return stats.getFirst();
+        List<ViewStatsResponse> stats = statsClient.getStatistics(earliestDate, now, List.of(uri), false);
+        return stats.stream()
+                .filter(stat -> uri.equals(stat.getUri()))
+                .findFirst()
+                .orElse(new ViewStatsResponse(APP_NAME, uri, 0L));
+    }
+
+    private Map<String, Long> getStatsByUri(List<Event> events) {
+        if (events.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        LocalDateTime start = events.stream()
+                .map(Event::getCreatedOn)
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.now());
+        LocalDateTime end = LocalDateTime.now();
+        List<String> uris = events.stream()
+                .map(event -> API_PREFIX_EVENTS + event.getId())
+                .toList();
+
+        List<ViewStatsResponse> stats = statsClient.getStatistics(start, end, uris, false);
+        Map<String, Long> viewsByUri = new HashMap<>();
+        stats.forEach(stat -> viewsByUri.put(stat.getUri(), stat.getHits()));
+
+        return viewsByUri;
+    }
+
+    private long getViews(Event event, Map<String, Long> viewsByUri) {
+        return viewsByUri.getOrDefault(API_PREFIX_EVENTS + event.getId(), 0L);
+    }
+
+    private <T> List<T> getPage(List<T> source, int from, int size) {
+        if (from >= source.size()) {
+            return List.of();
+        }
+
+        int toIndex = Math.min(from + size, source.size());
+        return source.subList(from, toIndex);
+    }
+
+    private void saveHit(String ip, String uri) {
+        statsClient.addStatistics(EndpointHitRequest.builder()
+                .app(APP_NAME)
+                .uri(uri)
+                .ip(ip)
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+
+    private void checkDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd) {
+        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+            throw new BadRequestException("rangeStart must be before rangeEnd");
+        }
     }
 
     private void updateEventFields(Event event, UpdateEventDto update, EventStatus status) {
