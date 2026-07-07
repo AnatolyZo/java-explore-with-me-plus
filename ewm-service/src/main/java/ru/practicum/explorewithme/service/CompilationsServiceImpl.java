@@ -46,8 +46,7 @@ public class CompilationsServiceImpl implements CompilationsService {
     }
 
     private void linkEvents(Compilation compilation, List<Event> events) {
-        events.forEach(event ->
-                {
+        events.forEach(event -> {
                     CompilationEvent compilationEvent = CompilationEvent.builder()
                             .compilation(compilation)
                             .event(event)
