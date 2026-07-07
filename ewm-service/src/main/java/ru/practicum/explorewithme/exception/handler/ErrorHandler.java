@@ -67,7 +67,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
-        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.FORBIDDEN);
+        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler

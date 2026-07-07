@@ -19,4 +19,14 @@ public interface EventService {
     ChangedRequestStatusesDto updateRequestStatuses(long userId, long eventId, UpdateRequestStatusDto update);
 
     Event getEventById(long eventId, long userId);
+
+    List<EventDto> searchEvents(List<Long> users,
+                                List<String> states,
+                                List<Long> categories,
+                                String rangeStart,
+                                String rangeEnd,
+                                int from,
+                                int size);
+
+    EventDto updateEventByAdmin(long eventId, UpdateEventDto updateEventDto);
 }

@@ -4,10 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.dto.*;
 import ru.practicum.explorewithme.entity.Category;
@@ -18,12 +23,15 @@ import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.EventRepository;
+import ru.practicum.explorewithme.repository.EventSearchSpecification;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
@@ -50,6 +58,9 @@ class PrivateEventServiceTests {
 
     @Mock
     private StatsClient statsClient;
+
+    @Mock
+    private EventSearchSpecification spec;
 
     private static final long USER_ID = 1L;
     private static final long EVENT_ID = 1L;
@@ -338,6 +349,141 @@ class PrivateEventServiceTests {
         verify(eventRepository, never()).save(event);
     }
 
+    @Test
+    void searchEvents_filtersAndPagination_returnsCorrectPage() {
+        // Arrange
+        List<Long> users = List.of(1L, 2L);
+        List<String> states = List.of("PUBLISHED", "CANCELLED");
+        List<Long> categories = List.of(3L);
+        String rangeStart = "2024-01-01 00:00:00";
+        String rangeEnd = "2024-12-31 23:59:59";
+        int from = 5;
+        int size = 10;
+
+        Event e1 = createTestEvent(1L, 1L, 3L, EventStatus.PUBLISHED);
+        Event e2 = createTestEvent(2L, 2L, 3L, EventStatus.CANCELLED);
+        List<Event> pageContent = List.of(e1, e2);
+
+        Page<Event> page = new PageImpl<>(pageContent, PageRequest.of(0, size), 25L);
+
+        when(eventRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(page);
+
+        ViewStatsResponse s1 = new ViewStatsResponse(null, "/events/1", 10L);
+        ViewStatsResponse s2 = new ViewStatsResponse(null, "/events/2", 20L);
+        List<ViewStatsResponse> stats = List.of(s1, s2);
+
+        when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean()))
+                .thenReturn(stats);
+
+        List<EventDto> result = eventService.searchEvents(users, states, categories, rangeStart, rangeEnd, from, size);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(1).getId()).isEqualTo(2L);
+
+        assertThat(result.get(0).getViews()).isEqualTo(10L);
+        assertThat(result.get(1).getViews()).isEqualTo(20L);
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(eventRepository).findAll(any(Specification.class), pageableCaptor.capture());
+
+        Pageable captured = pageableCaptor.getValue();
+        assertThat(captured.getOffset()).isEqualTo(5);
+        assertThat(captured.getPageSize()).isEqualTo(10);
+    }
+
+    @Test
+    void searchEvents_emptyResult_returnsEmptyList() {
+        List<Long> users = Collections.emptyList();
+        List<String> states = Collections.emptyList();
+        List<Long> categories = Collections.emptyList();
+        String rangeStart = null;
+        String rangeEnd = null;
+        int from = 0;
+        int size = 5;
+
+        Page<Event> emptyPage = new PageImpl<>(Collections.emptyList());
+        when(eventRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage);
+
+        List<EventDto> result = eventService.searchEvents(users, states, categories, rangeStart, rangeEnd, from, size);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void updateEventByAdmin_validPendingEvent_successfullyUpdatesAndReturnsDto() {
+        long eventId = 1L;
+        long initiatorId = 2L;
+
+        Event event = createTestEvent(eventId, initiatorId, 3L, EventStatus.PENDING);
+        event.setParticipantLimit(10);
+        event.setConfirmedRequests(2);
+
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH);
+
+        ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 42L);
+        when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean())).thenReturn(List.of(stats));
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        EventDto result = eventService.updateEventByAdmin(eventId, body);
+
+        // Assert
+        assertThat(result.getId()).isEqualTo(eventId);
+        assertThat(result.getStatus()).isEqualTo(EventStatus.PUBLISHED);
+        assertThat(result.getViews()).isEqualTo(42L);
+
+        verify(eventRepository).save(event);
+        verifyNoMoreInteractions(eventRepository);
+    }
+
+    @Test
+    void updateEventByAdmin_eventNotFound_throwsNotFoundException() {
+        long eventId = 999L;
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH);
+
+        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.updateEventByAdmin(eventId, body))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Event");
+    }
+
+    @Test
+    void updateEventByAdmin_nonPendingEvent_throwsUnavailableUpdateException() {
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED); // уже не PENDING
+
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT);
+
+        when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.updateEventByAdmin(EVENT_ID, body))
+                .isInstanceOf(UnavailableUpdateException.class)
+                .hasMessageContaining("Event");
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void updateEventByAdmin_rejectAction_mapsToCancelledStatus() {
+        long eventId = 1L;
+        Event event = createTestEvent(eventId, 1L, 3L, EventStatus.PENDING);
+
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT);
+
+        ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 5L);
+        when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean())).thenReturn(List.of(stats));
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EventDto result = eventService.updateEventByAdmin(eventId, body);
+
+        assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELLED);
+    }
+
     private Event createTestEvent(long eventId, long userId, long categoryId, EventStatus status) {
         Category category = createTestCategory(categoryId);
         User initiator = createTestUser(userId);
@@ -421,6 +567,21 @@ class PrivateEventServiceTests {
         return UpdateRequestStatusDto.builder()
                 .requestIds(requestIds)
                 .status(status)
+                .build();
+    }
+
+    public UpdateEventDto createUpdateEventDto(EventUpdateAction action) {
+        return UpdateEventDto.builder()
+                .title("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                .annotation("A".repeat(20))
+                .description("A".repeat(20))
+                .category(1L)
+                .eventDate(LocalDateTime.now().plusDays(1))
+                .location(new Location(59.9343, 30.3351))
+                .paid(false)
+                .participantLimit(0)
+                .requestModeration(false)
+                .status(action)
                 .build();
     }
 }
