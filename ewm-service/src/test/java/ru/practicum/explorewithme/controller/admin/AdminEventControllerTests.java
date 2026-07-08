@@ -40,6 +40,11 @@ public class AdminEventControllerTests {
         LocalDateTime time = LocalDateTime.of(2026, 8, 10, 14, 0, 0);
         LocalDateTime created = LocalDateTime.of(2026, 7, 10, 14, 0, 0);
         Location location = new Location(1, 1);
+        CategoryDto categoryDto = CategoryDto.builder()
+                .id(1L)
+                .name("Name")
+                .build();
+
         UserShortDto initiator = UserShortDto.builder()
                 .id(1L)
                 .name("AdminName")
@@ -62,7 +67,7 @@ public class AdminEventControllerTests {
         responseEvent = EventDto.builder()
                 .id(1L)
                 .annotation("AnnotationAnnotationAnnotationAnnotation")
-                .category(1L)
+                .category(categoryDto)
                 .confirmedRequests(10)
                 .createdOn(created)
                 .description("DescriptionDescriptionDescriptionDescription")

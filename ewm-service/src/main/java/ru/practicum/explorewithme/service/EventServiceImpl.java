@@ -5,7 +5,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +44,7 @@ public class EventServiceImpl implements EventService {
     private final RequestService requestService;
     private final StatsClient statsClient;
     private static final String API_PREFIX_EVENTS = "/events/";
+    private static final String APP_NAME = "ewm-main-service";
 
     @Override
     public List<EventDto> getEvents(long userId, int from, int size) {
@@ -54,7 +54,7 @@ public class EventServiceImpl implements EventService {
 
         Map<String, Long> viewsByUri = getStats(events);
 
-        return getEventsWithStats(events, stats);
+        return getEventsWithStats(events, viewsByUri);
     }
 
     @Override
@@ -202,8 +202,8 @@ public class EventServiceImpl implements EventService {
             start = LocalDateTime.now();
         }
 
-        Specification<Event> specification = Specification
-                .where(EventSpecifications.hasStatus(EventStatus.PUBLISHED))
+        Specification<Event> specification = Specification.<Event>unrestricted()
+                .and(EventSpecifications.hasStatus(EventStatus.PUBLISHED))
                 .and(EventSpecifications.textContains(text))
                 .and(EventSpecifications.categoryIn(categories))
                 .and(EventSpecifications.paidEquals(paid))
@@ -213,6 +213,11 @@ public class EventServiceImpl implements EventService {
 
         Sort eventsSort = sort == PublicEventSort.EVENT_DATE ? Sort.by("eventDate").ascending() : Sort.unsorted();
         List<Event> events = eventRepository.findAll(specification, eventsSort);
+
+        if (events.isEmpty()) {
+            return List.of();
+        }
+
         Map<String, Long> viewsByUri = getStats(events);
 
         List<EventShortDto> dtos = events.stream()
@@ -262,8 +267,8 @@ public class EventServiceImpl implements EventService {
         }
 
         //Получаем статистику
-        List<ViewStatsResponse> stats = getStats(events, null);
-        return getEventsWithStats(events, stats);
+        Map<String, Long> viewsByUri = getStats(events);
+        return getEventsWithStats(events, viewsByUri);
     }
 
     @Override
@@ -296,21 +301,20 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
 
-        ViewStatsResponse stats = getStats(updatedEvent);
-        long views = stats.getHits();
+        Map<String, Long> viewsByUri = getStats(List.of(updatedEvent));
 
-        return EventMapper.mapToEventDto(updatedEvent, views);
+        return EventMapper.mapToEventDto(updatedEvent, getViews(updatedEvent, viewsByUri));
     }
 
-    private List<ViewStatsResponse> getStats(List<Event> events, Long userId) {
+    private Map<String, Long> getStats(List<Event> events) {
         //Определяем самую раннюю дату создания события пользователем
-        LocalDateTime earliestDate = events.stream()
+        LocalDateTime start = events.stream()
                 .map(Event::getCreatedOn)
                 .min(LocalDateTime::compareTo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No events were found"));
 
         //Верхняя граница для поиска
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime end = LocalDateTime.now();
 
         //Получаем список uri для отправки в сервер статистики
         List<String> uris = events.stream()
@@ -352,20 +356,9 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private List<EventDto> getEventsWithStats(List<Event> events, List<ViewStatsResponse> stats) {
+    private List<EventDto> getEventsWithStats(List<Event> events, Map<String, Long> viewsByUri) {
         return events.stream()
-                .map(event -> {
-                    //Находим нужную статистику для события
-                    String targetUri = API_PREFIX_EVENTS + event.getId();
-
-                    long views = stats.stream()
-                            .filter(stat -> targetUri.equals(stat.getUri()))
-                            .findFirst()
-                            .map(ViewStatsResponse::getHits)
-                            .orElse(0L);
-
-                    return EventMapper.mapToEventDto(event, views);
-                })
+                .map(event -> EventMapper.mapToEventDto(event, getViews(event, viewsByUri)))
                 .toList();
     }
 
