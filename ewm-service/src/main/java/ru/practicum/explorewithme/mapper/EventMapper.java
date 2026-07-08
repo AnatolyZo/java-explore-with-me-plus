@@ -1,9 +1,6 @@
 package ru.practicum.explorewithme.mapper;
 
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.Location;
-import ru.practicum.explorewithme.dto.NewEventDto;
-import ru.practicum.explorewithme.dto.UserShortDto;
+import ru.practicum.explorewithme.dto.*;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
