@@ -46,6 +46,10 @@ public class PrivateEventControllerTests {
                 .id(1L)
                 .name("Name")
                 .build();
+        CategoryDto category = CategoryDto.builder()
+                .id(1L)
+                .name("Category")
+                .build();
 
         postRequest = NewEventDto.builder()
                 .annotation("AnnotationAnnotationAnnotationAnnotation")
@@ -75,7 +79,7 @@ public class PrivateEventControllerTests {
         response = EventDto.builder()
                 .id(1L)
                 .annotation("AnnotationAnnotationAnnotationAnnotation")
-                .category(1L)
+                .category(category)
                 .confirmedRequests(10)
                 .createdOn(created)
                 .description("DescriptionDescriptionDescriptionDescription")
