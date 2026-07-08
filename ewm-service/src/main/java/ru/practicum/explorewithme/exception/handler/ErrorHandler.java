@@ -2,8 +2,10 @@ package ru.practicum.explorewithme.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.explorewithme.exception.*;
@@ -50,6 +52,22 @@ public class ErrorHandler {
                 HttpStatus.BAD_REQUEST);
     }
 
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> badRequest(BadRequestException e) {
+        return createErrorResponse("incorrect request", e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> constraintViolation(ConstraintViolationException e) {
+        return createErrorResponse("incorrect field value", e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> methodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return createErrorResponse("incorrect field value", e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler
     public ResponseEntity<ApiError> duplicatedData(DuplicatedDataException e) {
         return createErrorResponse("duplicated data", e.getMessage(), HttpStatus.CONFLICT);
@@ -67,7 +85,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
-        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.FORBIDDEN);
+        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
