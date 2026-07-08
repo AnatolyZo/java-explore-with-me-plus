@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Entity
 @Table(name = "requests", schema = "public")
 public class Request {
@@ -21,11 +22,13 @@ public class Request {
     @Column(name = "created")
     private LocalDateTime created;
 
-    @Column(name = "event_id")
-    private long eventId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
 
-    @Column(name = "requester_id")
-    private long requesterId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requester_id", nullable = false)
+    private User requester;
 
     @Enumerated(EnumType.STRING)
     @Setter
