@@ -34,4 +34,14 @@ public interface EventService {
                                             String uri);
 
     EventDto getPublishedEvent(long eventId, String ip, String uri);
+
+    List<EventDto> searchEvents(List<Long> users,
+                                List<String> states,
+                                List<Long> categories,
+                                String rangeStart,
+                                String rangeEnd,
+                                int from,
+                                int size);
+
+    EventDto updateEventByAdmin(long eventId, UpdateEventDto updateEventDto);
 }
