@@ -4,8 +4,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
+import ru.practicum.explorewithme.dto.NewCompilationDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
+import ru.practicum.explorewithme.dto.UpdateCompilationRequest;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +36,29 @@ public class TestBase {
     protected UpdateCategoryDto buildUpdateCategoryDto() {
         return UpdateCategoryDto.builder()
                 .name("Category Name Update")
+                .build();
+    }
+
+    protected NewCompilationDto buildNewCompilationDto() {
+        return NewCompilationDto.builder()
+                .pinned(false)
+                .title("Compilation Title")
+                .build();
+    }
+
+    protected NewCompilationDto buildNewCompilationDto(List<Long> eventIds) {
+        return NewCompilationDto.builder()
+                .events(eventIds)
+                .pinned(false)
+                .title("Compilation Title")
+                .build();
+    }
+
+    protected UpdateCompilationRequest buildUpdateCompilationRequest(List<Long> eventIds) {
+        return UpdateCompilationRequest.builder()
+                .events(eventIds)
+                .pinned(true)
+                .title("Compilation Title Update")
                 .build();
     }
 }
