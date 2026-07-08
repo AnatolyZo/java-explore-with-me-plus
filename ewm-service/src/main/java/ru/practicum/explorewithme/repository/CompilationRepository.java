@@ -3,20 +3,20 @@ package ru.practicum.explorewithme.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import ru.practicum.explorewithme.entity.Category;
+import ru.practicum.explorewithme.entity.Compilation;
 
 import java.util.List;
 
-public interface CategoryRepository extends JpaRepository<Category, Long> {
-    boolean existsByName(String name);
+public interface CompilationRepository extends JpaRepository<Compilation, Long> {
 
     @Query(value = """
             SELECT *
-            FROM categories
+            FROM compilations
+            WHERE (:pinned IS NULL OR pinned = :pinned)
             ORDER BY id
             OFFSET :from
             ROWS FETCH NEXT :size ROWS ONLY
             """,
             nativeQuery = true)
-    List<Category> findWithOffset(@Param("from") int from, @Param("size") int size);
+    List<Compilation> findWithOffset(@Param("pinned") Boolean pinned, @Param("from") int from, @Param("size") int size);
 }

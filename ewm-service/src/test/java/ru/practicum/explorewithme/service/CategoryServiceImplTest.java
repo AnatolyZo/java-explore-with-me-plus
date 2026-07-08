@@ -12,9 +12,12 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
 import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.test.ServiceTest;
+
+import java.util.List;
 
 public class CategoryServiceImplTest extends ServiceTest {
     @InjectMocks
@@ -163,6 +166,55 @@ public class CategoryServiceImplTest extends ServiceTest {
         assertException(thrown, DuplicatedDataException.class);
     }
 
+    @Test
+    public void getCategories_ReturnsArray() {
+        // Arrange
+        int from = 0;
+        int size = 10;
+        List<Category> categories = List.of(
+                buildCategory(1),
+                buildCategory(2)
+        );
+        whenFindWithOffsetReturns(categories);
+
+        // Act
+        List<CategoryDto> actual = categoryService.getCategories(from, size);
+
+        // Assert
+        List<CategoryDto> expected = categories.stream()
+                .map(CategoryMapper::toCategoryDto)
+                .toList();
+        assertEquals(actual, expected);
+    }
+
+    @Test
+    public void getCategory_ReturnsObject() {
+        // Arrange
+        long categoryId = 1L;
+        Category category = buildCategory(categoryId);
+        whenEntityFoundIn(categoryRepository, category);
+
+        // Act
+        CategoryDto actual = categoryService.getCategory(categoryId);
+
+        // Assert
+        CategoryDto expected = buildCategoryDto(category);
+        assertEquals(actual, expected);
+    }
+
+    @Test
+    public void getCategory_AbsentCategory_NotFoundException() {
+        // Arrange
+        long absentId = 1L;
+        whenEntityNotFoundIn(categoryRepository);
+
+        // Act
+        Throwable thrown = Assertions.catchThrowable(() -> categoryService.getCategory(absentId));
+
+        // Assert
+        assertException(thrown, NotFoundException.class);
+    }
+
     private void whenCategoryExistBy(String name) {
         Mockito.when(categoryRepository.existsByName(Mockito.eq(name)))
                 .thenReturn(true);
@@ -181,6 +233,11 @@ public class CategoryServiceImplTest extends ServiceTest {
     private void whenEventsNotExistIn(long categoryId) {
         Mockito.when(eventRepository.existsByCategoryId(Mockito.eq(categoryId)))
                 .thenReturn(false);
+    }
+
+    private void whenFindWithOffsetReturns(List<Category> categories) {
+        Mockito.when(categoryRepository.findWithOffset(Mockito.anyInt(), Mockito.anyInt()))
+                .thenReturn(categories);
     }
 
     private CategoryDto buildCategoryDto(Category category) {

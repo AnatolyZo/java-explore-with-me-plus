@@ -15,6 +15,8 @@ import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -79,6 +81,24 @@ public class CategoryServiceImpl implements CategoryService {
         log.debug("Создано обновление категории: {}", update);
         Category result = categoryRepository.save(update);
         log.debug("Обновление {} сохранено", update);
+        return CategoryMapper.toCategoryDto(result);
+    }
+
+    @Override
+    public List<CategoryDto> getCategories(int from, int size) {
+        log.trace("Инициировано получение категорий с параметрами from={} и size={}", from, size);
+        List<Category> result = categoryRepository.findWithOffset(from, size);
+        log.debug("Найдено {} категорий", result.size());
+        return result.stream()
+                .map(CategoryMapper::toCategoryDto)
+                .toList();
+    }
+
+    @Override
+    public CategoryDto getCategory(long catId) {
+        log.trace("Инициировано получение категории с id={}", catId);
+        Category result = findCategoryBy(catId);
+        log.debug("Найдена категория {}", result);
         return CategoryMapper.toCategoryDto(result);
     }
 
