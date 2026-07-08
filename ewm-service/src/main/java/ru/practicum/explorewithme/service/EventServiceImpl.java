@@ -27,7 +27,6 @@ import ru.practicum.explorewithme.stats.ViewStatsResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,22 +49,10 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable);
 
-        //Получаем статистику
-        List<ViewStatsResponse> stats = getStats(events, userId);
+        Map<String, Long> viewsByUri = getStats(events);
 
         return events.stream()
-                .map(event -> {
-                    //Находим нужную статистику для события
-                    String targetUri = API_PREFIX_EVENTS + event.getId();
-
-                    long views = stats.stream()
-                            .filter(stat -> targetUri.equals(stat.getUri()))
-                            .findFirst()
-                            .map(ViewStatsResponse::getHits)
-                            .orElse(0L);
-
-                    return EventMapper.mapToEventDto(event, views);
-                })
+                .map(event -> EventMapper.mapToEventDto(event, getViews(event, viewsByUri)))
                 .toList();
     }
 
@@ -95,10 +82,9 @@ public class EventServiceImpl implements EventService {
     public EventDto getEvent(long userId, long eventId) {
         Event event = getEventById(userId, eventId);
 
-        ViewStatsResponse stats = getStats(event);
-        long views = stats.getHits();
+        Map<String, Long> viewsByUri = getStats(List.of(event));
 
-        return EventMapper.mapToEventDto(event, views);
+        return EventMapper.mapToEventDto(event, getViews(event, viewsByUri));
     }
 
     @Override
@@ -124,10 +110,9 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
 
-        ViewStatsResponse stats = getStats(event);
-        long views = stats.getHits();
+        Map<String, Long> viewsByUri = getStats(List.of(event));
 
-        return EventMapper.mapToEventDto(updatedEvent, views);
+        return EventMapper.mapToEventDto(updatedEvent, getViews(event, viewsByUri));
     }
 
     @Override
@@ -225,7 +210,7 @@ public class EventServiceImpl implements EventService {
 
         Sort eventsSort = sort == PublicEventSort.EVENT_DATE ? Sort.by("eventDate").ascending() : Sort.unsorted();
         List<Event> events = eventRepository.findAll(specification, eventsSort);
-        Map<String, Long> viewsByUri = getStatsByUri(events);
+        Map<String, Long> viewsByUri = getStats(events);
 
         List<EventShortDto> dtos = events.stream()
                 .map(event -> EventMapper.mapToEventShortDto(event, getViews(event, viewsByUri)))
@@ -245,9 +230,9 @@ public class EventServiceImpl implements EventService {
         saveHit(ip, uri);
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event", eventId));
-        long views = getStats(event).getHits();
+        Map<String, Long> viewsByUri = getStats(List.of(event));
 
-        return EventMapper.mapToEventDto(event, views);
+        return EventMapper.mapToEventDto(event, getViews(event, viewsByUri));
     }
 
     @Override
@@ -256,36 +241,9 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Event", eventId));
     }
 
-    private List<ViewStatsResponse> getStats(List<Event> events, long userId) {
-        //Определяем самую раннюю дату создания события пользователем
-        LocalDateTime earliestDate = events.stream()
-                .map(Event::getCreatedOn)
-                .min(LocalDateTime::compareTo)
-                .orElseThrow(() -> new NotFoundException("event from user", userId));
-
-        //Верхняя граница для поиска
-        LocalDateTime now = LocalDateTime.now();
-
-        //Получаем список uri для отправки в сервер статистики
-        List<String> uris = events.stream()
-                .map(event -> API_PREFIX_EVENTS + event.getId())
-                .toList();
-
-        return statsClient.getStatistics(earliestDate, now, uris, false);
-    }
-
-    private ViewStatsResponse getStats(Event event) {
-        LocalDateTime earliestDate = event.getCreatedOn();
-        LocalDateTime now = LocalDateTime.now();
-        List<String> uri = List.of(API_PREFIX_EVENTS + event.getId());
-
-        List<ViewStatsResponse> stats = statsClient.getStatistics(earliestDate, now, uri, false);
-        return stats.isEmpty() ? new ViewStatsResponse(APP_NAME, uri.getFirst(), 0L) : stats.getFirst();
-    }
-
-    private Map<String, Long> getStatsByUri(List<Event> events) {
+    private Map<String, Long> getStats(List<Event> events) {
         if (events.isEmpty()) {
-            return Collections.emptyMap();
+            return Map.of();
         }
 
         LocalDateTime start = events.stream()
