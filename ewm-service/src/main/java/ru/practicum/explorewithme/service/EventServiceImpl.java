@@ -64,7 +64,7 @@ public class EventServiceImpl implements EventService {
             int usersMinOffset = 2;
             checkTimeBeforeEventStart(newEventDto.getEventDate(), usersMinOffset);
         }
-
+        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!" + newEventDto);
         //Получаем данные по категории, инициатору и месту проведения события
         Category category = categoryService.findCategoryBy(newEventDto.getCategory());
         User initiator = userService.getUserById(userId);
@@ -75,6 +75,7 @@ public class EventServiceImpl implements EventService {
         Event event = EventMapper.mapToEvent(newEventDto, category, initiator, locationEmbeddable);
         event.setCreatedOn(LocalDateTime.now());
         event.setStatus(EventStatus.PENDING);
+        event.setRequestModeration(true);
 
         Event createdEvent = eventRepository.save(event);
         return EventMapper.mapToEventDto(createdEvent,0);
@@ -82,7 +83,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventDto getEvent(long userId, long eventId) {
-        Event event = getEventById(userId, eventId);
+        Event event = getEventById(eventId, userId);
 
         Map<String, Long> viewsByUri = getStats(List.of(event));
 
@@ -100,16 +101,20 @@ public class EventServiceImpl implements EventService {
         Event event = getEventById(eventId, userId);
 
         //Проверяем, что событие отменено или ожидает модерации
-        if (!event.getStatus().equals(EventStatus.CANCELLED) && !event.getStatus().equals(EventStatus.PENDING)) {
+        if (!event.getStatus().equals(EventStatus.CANCELED) && !event.getStatus().equals(EventStatus.PENDING)) {
             throw new UnavailableUpdateException("Event", eventId);
         }
 
+        EventStatus status;
+
         //Проверяем хочет ли пользователь отменить событие
-        if (body.getStatus().equals(EventUpdateAction.CANCEL)) {
-            updateEventFields(event, body, EventStatus.CANCELLED);
+        if (body.getStatus() != null && body.getStatus().equals(EventUpdateAction.CANCEL_REVIEW)) {
+            status = EventStatus.CANCELED;
         } else {
-            updateEventFields(event, body, EventStatus.PENDING);
+            status = EventStatus.PENDING;
         }
+
+        updateEventFields(event, body, status);
 
         Event updatedEvent = eventRepository.save(event);
 
@@ -289,12 +294,12 @@ public class EventServiceImpl implements EventService {
 
         EventStatus status;
 
-        if (body.getStatus().equals(EventUpdateAction.PUBLISH)) {
+        if (body.getStatus() != null && body.getStatus().equals(EventUpdateAction.PUBLISH_EVENT)) {
             status = EventStatus.PUBLISHED;
-        } else if (body.getStatus().equals(EventUpdateAction.REJECT)) {
-            status = EventStatus.CANCELLED;
+        } else if (body.getStatus() != null && body.getStatus().equals(EventUpdateAction.REJECT_EVENT)) {
+            status = EventStatus.CANCELED;
         } else {
-            throw new UnavailableUpdateException("Event", eventId);
+            status = event.getStatus();
         }
 
         updateEventFields(event, body, status);

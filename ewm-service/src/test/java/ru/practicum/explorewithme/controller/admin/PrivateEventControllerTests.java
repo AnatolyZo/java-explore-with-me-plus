@@ -72,7 +72,7 @@ public class PrivateEventControllerTests {
                 .paid(true)
                 .participantLimit(10)
                 .requestModeration(true)
-                .status(EventUpdateAction.UPDATE)
+                .status(EventUpdateAction.SEND_TO_REVIEW)
                 .title("TitleTitleTitleTitleTitle")
                 .build();
 

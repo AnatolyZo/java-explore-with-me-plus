@@ -31,15 +31,14 @@ public class NewEventDto {
     @NotNull(message = "'location' field cannot be null.")
     private Location location;
 
-    @NotNull(message = "'paid' field cannot be null.")
-    private Boolean paid;
+    @Builder.Default
+    private boolean paid = false;
 
-    @NotNull(message = "'participantLimit' field cannot be null.")
     @PositiveOrZero(message = "'participantLimit' must be positive or zero.")
-    private Integer participantLimit;
+    @Builder.Default
+    private int participantLimit = 0;
 
-    @NotNull(message = "'requestModeration' field cannot be null.")
-    private Boolean requestModeration;
+    private boolean requestModeration;
 
     @NotBlank(message = "'title' field cannot be empty.")
     @Size(min = 3, max = 120, message = "Title must be between 3 and 120 characters")
