@@ -18,9 +18,9 @@ public class EventMapper {
                 .eventDate(body.getEventDate())
                 .initiator(initiator)
                 .location(location)
-                .paid(body.getPaid())
+                .paid(body.isPaid())
                 .participantLimit(body.getParticipantLimit())
-                .requestModeration(body.getRequestModeration())
+                .requestModeration(body.isRequestModeration())
                 .title(body.getTitle())
                 .build();
     }

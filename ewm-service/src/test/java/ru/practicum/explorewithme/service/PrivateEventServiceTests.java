@@ -87,7 +87,7 @@ class PrivateEventServiceTests {
 
         updateEventDto = UpdateEventDto.builder()
                 .title("Updated Title")
-                .status(EventUpdateAction.UPDATE)
+                .status(EventUpdateAction.SEND_TO_REVIEW)
                 .build();
 
         updateRequestStatusDto = UpdateRequestStatusDto.builder()
@@ -192,7 +192,7 @@ class PrivateEventServiceTests {
     void updateEvent_updatesEventFields_whenStatusAllows() {
         Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
 
-        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.UPDATE);
+        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.SEND_TO_REVIEW);
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
         when(eventRepository.save(existingEvent)).thenReturn(existingEvent);
@@ -227,7 +227,7 @@ class PrivateEventServiceTests {
     void updateEvent_cancelsEvent_whenStatusActionIsCancel() {
         Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
 
-        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.CANCEL);
+        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.CANCEL_REVIEW);
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
         when(eventRepository.save(existingEvent)).thenReturn(existingEvent);
@@ -238,8 +238,8 @@ class PrivateEventServiceTests {
 
         EventDto result = eventService.updateEvent(USER_ID, EVENT_ID, update);
 
-        assertThat(existingEvent.getStatus()).isEqualTo(EventStatus.CANCELLED);
-        assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELLED);
+        assertThat(existingEvent.getStatus()).isEqualTo(EventStatus.CANCELED);
+        assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELED);
     }
 
     @Test
@@ -361,7 +361,7 @@ class PrivateEventServiceTests {
         int size = 10;
 
         Event e1 = createTestEvent(1L, 1L, 3L, EventStatus.PUBLISHED);
-        Event e2 = createTestEvent(2L, 2L, 3L, EventStatus.CANCELLED);
+        Event e2 = createTestEvent(2L, 2L, 3L, EventStatus.CANCELED);
         List<Event> pageContent = List.of(e1, e2);
 
         Page<Event> page = new PageImpl<>(pageContent, PageRequest.of(0, size), 25L);
@@ -420,7 +420,7 @@ class PrivateEventServiceTests {
         event.setParticipantLimit(10);
         event.setConfirmedRequests(2);
 
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH);
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH_EVENT);
 
         ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 42L);
         when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean())).thenReturn(List.of(stats));
@@ -443,7 +443,7 @@ class PrivateEventServiceTests {
     @Test
     void updateEventByAdmin_eventNotFound_throwsNotFoundException() {
         long eventId = 999L;
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH);
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH_EVENT);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
@@ -456,7 +456,7 @@ class PrivateEventServiceTests {
     void updateEventByAdmin_nonPendingEvent_throwsUnavailableUpdateException() {
         Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED); // уже не PENDING
 
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT);
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT_EVENT);
 
         when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
 
@@ -472,7 +472,7 @@ class PrivateEventServiceTests {
         long eventId = 1L;
         Event event = createTestEvent(eventId, 1L, 3L, EventStatus.PENDING);
 
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT);
+        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT_EVENT);
 
         ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 5L);
         when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean())).thenReturn(List.of(stats));
@@ -481,7 +481,7 @@ class PrivateEventServiceTests {
 
         EventDto result = eventService.updateEventByAdmin(eventId, body);
 
-        assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELLED);
+        assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELED);
     }
 
     private Event createTestEvent(long eventId, long userId, long categoryId, EventStatus status) {

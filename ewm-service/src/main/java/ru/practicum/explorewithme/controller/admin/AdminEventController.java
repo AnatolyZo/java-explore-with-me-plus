@@ -1,5 +1,6 @@
 package ru.practicum.explorewithme.controller.admin;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,7 @@ public class AdminEventController {
 
     @PatchMapping("/{" + PATH_VAR_ID + "}")
     public ResponseEntity<EventDto> updateEvent(@PathVariable long eventId,
-                                                @RequestBody UpdateEventDto updateEventDto) {
+                                                @Valid @RequestBody UpdateEventDto updateEventDto) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(eventService.updateEventByAdmin(eventId, updateEventDto));
     }

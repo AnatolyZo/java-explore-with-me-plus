@@ -61,7 +61,7 @@ public class AdminEventControllerTests {
                 .paid(false)
                 .participantLimit(10)
                 .requestModeration(false)
-                .status(EventUpdateAction.PUBLISH)
+                .status(EventUpdateAction.PUBLISH_EVENT)
                 .build();
 
         responseEvent = EventDto.builder()

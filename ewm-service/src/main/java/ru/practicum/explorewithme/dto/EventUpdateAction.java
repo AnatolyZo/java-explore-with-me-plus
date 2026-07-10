@@ -1,8 +1,8 @@
 package ru.practicum.explorewithme.dto;
 
 public enum EventUpdateAction {
-    UPDATE,
-    PUBLISH,
-    REJECT,
-    CANCEL
+    SEND_TO_REVIEW,
+    PUBLISH_EVENT,
+    REJECT_EVENT,
+    CANCEL_REVIEW
 }

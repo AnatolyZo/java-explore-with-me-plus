@@ -1,6 +1,7 @@
 package ru.practicum.explorewithme.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -35,6 +36,7 @@ public class UpdateEventDto {
 
     private Boolean requestModeration;
 
+    @JsonProperty("stateAction")
     private EventUpdateAction status;
 
     @Size(min = 3, max = 120, message = "Title must be between 3 and 120 characters")
