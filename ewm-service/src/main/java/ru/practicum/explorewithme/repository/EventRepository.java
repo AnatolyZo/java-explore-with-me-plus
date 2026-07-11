@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.dto.EventStatus;
-import ru.practicum.explorewithme.entity.Request;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +17,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     List<Event> findByInitiatorId(long initiatorId, Pageable pageable);
 
     Optional<Event> findByIdAndInitiatorId(long eventId, long initiatorId);
-  
+
     Optional<Event> findById(Long eventId);
 
     Optional<Event> findByIdAndStatus(long eventId, EventStatus status);

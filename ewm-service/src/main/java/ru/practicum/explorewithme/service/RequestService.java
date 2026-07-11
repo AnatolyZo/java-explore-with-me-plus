@@ -3,7 +3,6 @@ package ru.practicum.explorewithme.service;
 import ru.practicum.explorewithme.dto.ParticipationRequestDto;
 import ru.practicum.explorewithme.dto.RequestDto;
 import ru.practicum.explorewithme.dto.RequestStatus;
-import ru.practicum.explorewithme.entity.Request;
 
 import java.util.List;
 

@@ -91,7 +91,7 @@ public class RequestServiceImpl implements RequestService {
         Event event = eventRepository.findById(eventIdL)
                 .orElseThrow(() -> new IdNotFoundException(eventIdL));
 
-        if (event.getInitiator() != null && event.getInitiator().getId() == userIdL ) {
+        if (event.getInitiator() != null && event.getInitiator().getId() == userIdL) {
             throw new DuplicatedDataException("request", "eventId and userId", eventId);
         }
 
@@ -132,7 +132,7 @@ public class RequestServiceImpl implements RequestService {
         Request request = requestRepository.findById(requestIdL)
                 .orElseThrow(() -> new IdNotFoundException(requestIdL));
 
-        if(request.getStatus().equals(RequestStatus.CONFIRMED)) {
+        if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             throw new DuplicatedDataException("request", "status", RequestStatus.CONFIRMED);
         }
 
