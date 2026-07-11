@@ -8,10 +8,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.explorewithme.StatsClient;
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.EventShortDto;
-import ru.practicum.explorewithme.dto.EventStatus;
-import ru.practicum.explorewithme.dto.PublicEventSort;
+import ru.practicum.explorewithme.dto.event.EventDto;
+import ru.practicum.explorewithme.dto.event.EventShortDto;
+import ru.practicum.explorewithme.dto.event.EventStatus;
+import ru.practicum.explorewithme.dto.event.PublicEventSort;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
@@ -64,7 +64,7 @@ class PublicEventServiceTests {
         List<Event> events = List.of(first, second);
 
         when(eventRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(events);
-        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false)))
+        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true)))
                 .thenReturn(List.of(
                         new ViewStatsResponse("ewm-main-service", "/events/1", 11L),
                         new ViewStatsResponse("ewm-main-service", "/events/2", 22L)
@@ -90,7 +90,7 @@ class PublicEventServiceTests {
         assertThat(result.get(1).getId()).isEqualTo(2L);
         assertThat(result.get(1).getViews()).isEqualTo(22L);
         verify(statsClient).addStatistics(any(EndpointHitRequest.class));
-        verify(statsClient).getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false));
+        verify(statsClient).getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true));
     }
 
     @Test
@@ -113,14 +113,14 @@ class PublicEventServiceTests {
 
         assertThat(result).isEmpty();
         verify(statsClient).addStatistics(any(EndpointHitRequest.class));
-        verify(statsClient, never()).getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false));
+        verify(statsClient, never()).getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true));
     }
 
     @Test
     void getPublishedEvent_returnsEventWithViewsFromStatsMap() {
         Event event = createEvent(3L, "Published event", EventStatus.PUBLISHED, 0);
         when(eventRepository.findByIdAndStatus(3L, EventStatus.PUBLISHED)).thenReturn(Optional.of(event));
-        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false)))
+        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true)))
                 .thenReturn(List.of(new ViewStatsResponse("ewm-main-service", "/events/3", 33L)));
 
         EventDto result = eventService.getPublishedEvent(3L, IP, "/events/3");

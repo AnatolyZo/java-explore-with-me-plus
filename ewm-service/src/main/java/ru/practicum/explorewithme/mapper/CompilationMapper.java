@@ -1,7 +1,7 @@
 package ru.practicum.explorewithme.mapper;
 
-import ru.practicum.explorewithme.dto.CompilationDto;
-import ru.practicum.explorewithme.dto.NewCompilationDto;
+import ru.practicum.explorewithme.dto.compilation.CompilationDto;
+import ru.practicum.explorewithme.dto.compilation.NewCompilationDto;
 import ru.practicum.explorewithme.entity.Compilation;
 
 public class CompilationMapper {

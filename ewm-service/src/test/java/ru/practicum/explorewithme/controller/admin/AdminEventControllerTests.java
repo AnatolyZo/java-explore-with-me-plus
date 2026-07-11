@@ -8,7 +8,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.dto.category.CategoryDto;
+import ru.practicum.explorewithme.dto.event.*;
+import ru.practicum.explorewithme.dto.user.UserShortDto;
 import ru.practicum.explorewithme.service.EventService;
 
 import java.time.LocalDateTime;
@@ -35,7 +37,7 @@ public class AdminEventControllerTests {
     @MockitoBean
     private EventService eventService;
 
-    private UpdateEventDto updateRequest;
+    private AdminUpdateEventDto updateRequest;
     private EventDto responseEvent;
     private List<EventDto> responseList;
 
@@ -54,8 +56,7 @@ public class AdminEventControllerTests {
                 .name("AdminName")
                 .build();
 
-        // UpdateEventDto: используем валидные значения
-        updateRequest = UpdateEventDto.builder()
+        updateRequest = AdminUpdateEventDto.builder()
                 .title("ValidTitle123456789012")
                 .annotation("A".repeat(20))
                 .description("B".repeat(20))
@@ -65,7 +66,7 @@ public class AdminEventControllerTests {
                 .paid(false)
                 .participantLimit(10)
                 .requestModeration(false)
-                .status(EventUpdateAction.PUBLISH_EVENT)
+                .status(AdminEventUpdateAction.PUBLISH_EVENT)
                 .build();
 
         responseEvent = EventDto.builder()
@@ -140,7 +141,7 @@ public class AdminEventControllerTests {
     void updateEvent_validDto_returnsOk() throws Exception {
         long eventId = 1L;
 
-        when(eventService.updateEventByAdmin(eq(eventId), any(UpdateEventDto.class)))
+        when(eventService.updateEvent(eq(eventId), any(AdminUpdateEventDto.class)))
                 .thenReturn(responseEvent);
 
         String content = objectMapper.writeValueAsString(updateRequest);

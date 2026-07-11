@@ -1,14 +1,14 @@
 package ru.practicum.explorewithme.repository.specification;
 
 import org.springframework.data.jpa.domain.Specification;
-import ru.practicum.explorewithme.dto.EventStatus;
+import ru.practicum.explorewithme.dto.event.EventStatus;
 import ru.practicum.explorewithme.entity.Event;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class EventSpecifications {
-    private EventSpecifications() {
+public class UsersEventSearchSpecifications {
+    private UsersEventSearchSpecifications() {
     }
 
     public static Specification<Event> hasStatus(EventStatus status) {

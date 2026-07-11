@@ -1,6 +1,9 @@
 package ru.practicum.explorewithme.service;
 
-import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.dto.event.*;
+import ru.practicum.explorewithme.dto.request.ChangedRequestStatusesDto;
+import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.UpdateRequestStatusDto;
 import ru.practicum.explorewithme.entity.Event;
 
 import java.time.LocalDateTime;
@@ -13,7 +16,7 @@ public interface EventService {
 
     EventDto getEvent(long userId, long eventId);
 
-    EventDto updateEvent(long userId, long eventId, UpdateEventDto updateEventDto);
+    EventDto updateEvent(long userId, long eventId, UserUpdateEventDto userUpdateEventDto);
 
     List<RequestDto> getRequests(long userId, long eventId);
 
@@ -22,16 +25,16 @@ public interface EventService {
     Event getEventById(long eventId, long userId);
 
     List<EventShortDto> getPublishedEvents(String text,
-                                            List<Long> categories,
-                                            Boolean paid,
-                                            LocalDateTime rangeStart,
-                                            LocalDateTime rangeEnd,
-                                            boolean onlyAvailable,
-                                            PublicEventSort sort,
-                                            int from,
-                                            int size,
-                                            String ip,
-                                            String uri);
+                                           List<Long> categories,
+                                           Boolean paid,
+                                           LocalDateTime rangeStart,
+                                           LocalDateTime rangeEnd,
+                                           boolean onlyAvailable,
+                                           PublicEventSort sort,
+                                           int from,
+                                           int size,
+                                           String ip,
+                                           String uri);
 
     EventDto getPublishedEvent(long eventId, String ip, String uri);
 
@@ -43,5 +46,5 @@ public interface EventService {
                                 int from,
                                 int size);
 
-    EventDto updateEventByAdmin(long eventId, UpdateEventDto updateEventDto);
+    EventDto updateEvent(long eventId, AdminUpdateEventDto adminUpdateEventDto);
 }

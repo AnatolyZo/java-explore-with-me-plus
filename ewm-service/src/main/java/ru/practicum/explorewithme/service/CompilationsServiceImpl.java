@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.StatsClient;
-import ru.practicum.explorewithme.dto.CompilationDto;
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.NewCompilationDto;
-import ru.practicum.explorewithme.dto.UpdateCompilationRequest;
+import ru.practicum.explorewithme.dto.compilation.CompilationDto;
+import ru.practicum.explorewithme.dto.event.EventDto;
+import ru.practicum.explorewithme.dto.compilation.NewCompilationDto;
+import ru.practicum.explorewithme.dto.compilation.UpdateCompilationRequest;
 import ru.practicum.explorewithme.entity.Compilation;
 import ru.practicum.explorewithme.entity.CompilationEvent;
 import ru.practicum.explorewithme.entity.Event;
@@ -17,7 +17,6 @@ import ru.practicum.explorewithme.repository.CompilationRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -67,8 +66,7 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
         if (events.isEmpty()) {
             return compilationDto;
         }
-        Map<String, Long> uriViews = getStats(statsClient, events);
-        List<EventDto> eventWithStats = getEventsWithStats(events, uriViews);
+        List<EventDto> eventWithStats = getEventsWithStats(events, statsClient);
         compilationDto.setEvents(eventWithStats);
         return compilationDto;
     }

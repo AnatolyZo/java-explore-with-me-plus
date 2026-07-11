@@ -35,7 +35,7 @@ public class ErrorHandler {
 
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> badRequest(BadRequestException e) {
+    public ResponseEntity<ApiError> wrongInterval(WrongDateIntervalException e) {
         return createErrorResponse("incorrect request", e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 

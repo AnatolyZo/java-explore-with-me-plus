@@ -1,8 +1,7 @@
 package ru.practicum.explorewithme.service;
 
-import ru.practicum.explorewithme.dto.ParticipationRequestDto;
-import ru.practicum.explorewithme.dto.RequestDto;
-import ru.practicum.explorewithme.dto.RequestStatus;
+import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.RequestStatus;
 
 import java.util.List;
 
@@ -13,9 +12,9 @@ public interface RequestService {
 
     List<RequestDto> getRequestsByIds(List<Long> requestIds);
 
-    ParticipationRequestDto create(String userId, String eventId);
+    RequestDto create(long userId, long eventId);
 
-    ParticipationRequestDto cancelRequest(String userId, String requestId);
+    RequestDto cancelRequest(long userId, long requestId);
 
-    List<ParticipationRequestDto> getUserRequests(String requesterId);
+    List<RequestDto> getUserRequests(long requesterId);
 }

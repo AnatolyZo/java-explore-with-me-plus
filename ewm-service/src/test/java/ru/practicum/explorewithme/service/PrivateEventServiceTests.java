@@ -14,7 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.explorewithme.StatsClient;
-import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.dto.event.*;
+import ru.practicum.explorewithme.dto.request.ChangedRequestStatusesDto;
+import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.RequestStatus;
+import ru.practicum.explorewithme.dto.request.UpdateRequestStatusDto;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
@@ -24,7 +28,7 @@ import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
-import ru.practicum.explorewithme.repository.EventSearchSpecification;
+import ru.practicum.explorewithme.repository.specification.AdminEventSearchSpecification;
 import ru.practicum.explorewithme.repository.UserRepository;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
@@ -68,14 +72,14 @@ class PrivateEventServiceTests {
     private StatsClient statsClient;
 
     @Mock
-    private EventSearchSpecification spec;
+    private AdminEventSearchSpecification spec;
 
     private static final long USER_ID = 1L;
     private static final long EVENT_ID = 1L;
     private static final long CATEGORY_ID = 1L;
 
     private NewEventDto newEventDto;
-    private UpdateEventDto updateEventDto;
+    private UserUpdateEventDto userUpdateEventDto;
     private UpdateRequestStatusDto updateRequestStatusDto;
 
     @BeforeEach
@@ -93,9 +97,9 @@ class PrivateEventServiceTests {
                 .requestModeration(true)
                 .build();
 
-        updateEventDto = UpdateEventDto.builder()
+        userUpdateEventDto = UserUpdateEventDto.builder()
                 .title("Updated Title")
-                .status(EventUpdateAction.SEND_TO_REVIEW)
+                .status(UserEventUpdateAction.SEND_TO_REVIEW)
                 .build();
 
         updateRequestStatusDto = UpdateRequestStatusDto.builder()
@@ -126,7 +130,7 @@ class PrivateEventServiceTests {
                 any(LocalDateTime.class),
                 any(LocalDateTime.class),
                 anyList(),
-                eq(false)))
+                eq(true)))
                 .thenReturn(statsList);
 
         List<EventDto> result = eventService.getEvents(USER_ID, from, size);
@@ -136,7 +140,7 @@ class PrivateEventServiceTests {
         assertThat(result.get(0).getViews()).isEqualTo(7L);
 
         verify(eventRepository).findByInitiatorId(eq(USER_ID), any(Pageable.class));
-        verify(statsClient).getStatistics(any(), any(), any(), eq(false));
+        verify(statsClient).getStatistics(any(), any(), any(), eq(true));
     }
 
     @Test
@@ -177,7 +181,7 @@ class PrivateEventServiceTests {
         ViewStatsResponse stats = new ViewStatsResponse(null, uri, 5L);
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(event));
-        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false)))
+        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true)))
                 .thenReturn(List.of(stats));
 
         EventDto result = eventService.getEvent(USER_ID, EVENT_ID);
@@ -186,7 +190,7 @@ class PrivateEventServiceTests {
         assertThat(result.getViews()).isEqualTo(5L);
 
         verify(eventRepository).findByIdAndInitiatorId(EVENT_ID, USER_ID);
-        verify(statsClient).getStatistics(any(), any(), anyList(), eq(false));
+        verify(statsClient).getStatistics(any(), any(), anyList(), eq(true));
     }
 
     @Test
@@ -200,14 +204,14 @@ class PrivateEventServiceTests {
     void updateEvent_updatesEventFields_whenStatusAllows() {
         Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
 
-        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.SEND_TO_REVIEW);
+        UserUpdateEventDto update = createTestUpdateEventDto(UserEventUpdateAction.SEND_TO_REVIEW);
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
         when(eventRepository.save(existingEvent)).thenReturn(existingEvent);
 
         String uri = "/events/" + EVENT_ID;
         ViewStatsResponse stats = new ViewStatsResponse(null, uri, 3L);
-        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(false)))
+        when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true)))
                 .thenReturn(List.of(stats));
 
         EventDto result = eventService.updateEvent(USER_ID, EVENT_ID, update);
@@ -223,7 +227,7 @@ class PrivateEventServiceTests {
     void updateEvent_throwsUnavailableUpdateException_whenStatusDoesNotAllowUpdate() {
         Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED);
 
-        UpdateEventDto update = UpdateEventDto.builder().build();
+        UserUpdateEventDto update = UserUpdateEventDto.builder().build();
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
 
@@ -235,14 +239,14 @@ class PrivateEventServiceTests {
     void updateEvent_cancelsEvent_whenStatusActionIsCancel() {
         Event existingEvent = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PENDING);
 
-        UpdateEventDto update = createTestUpdateEventDto(EventUpdateAction.CANCEL_REVIEW);
+        UserUpdateEventDto update = createTestUpdateEventDto(UserEventUpdateAction.CANCEL_REVIEW);
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(existingEvent));
         when(eventRepository.save(existingEvent)).thenReturn(existingEvent);
 
         String uri = "/events/" + EVENT_ID;
         ViewStatsResponse stats = new ViewStatsResponse(null, uri, 0L);
-        when(statsClient.getStatistics(any(), any(), anyList(), eq(false))).thenReturn(List.of(stats));
+        when(statsClient.getStatistics(any(), any(), anyList(), eq(true))).thenReturn(List.of(stats));
 
         EventDto result = eventService.updateEvent(USER_ID, EVENT_ID, update);
 
@@ -428,7 +432,7 @@ class PrivateEventServiceTests {
         event.setParticipantLimit(10);
         event.setConfirmedRequests(2);
 
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH_EVENT);
+        AdminUpdateEventDto body = createUpdateEventDto(AdminEventUpdateAction.PUBLISH_EVENT);
 
         ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 42L);
         when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean())).thenReturn(List.of(stats));
@@ -437,7 +441,7 @@ class PrivateEventServiceTests {
         when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        EventDto result = eventService.updateEventByAdmin(eventId, body);
+        EventDto result = eventService.updateEvent(eventId, body);
 
         // Assert
         assertThat(result.getId()).isEqualTo(eventId);
@@ -451,11 +455,11 @@ class PrivateEventServiceTests {
     @Test
     void updateEventByAdmin_eventNotFound_throwsNotFoundException() {
         long eventId = 999L;
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.PUBLISH_EVENT);
+        AdminUpdateEventDto body = createUpdateEventDto(AdminEventUpdateAction.PUBLISH_EVENT);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> eventService.updateEventByAdmin(eventId, body))
+        assertThatThrownBy(() -> eventService.updateEvent(eventId, body))
                 .isInstanceOf(IdNotFoundException.class);
     }
 
@@ -463,11 +467,11 @@ class PrivateEventServiceTests {
     void updateEventByAdmin_nonPendingEvent_throwsUnavailableUpdateException() {
         Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED); // уже не PENDING
 
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT_EVENT);
+        AdminUpdateEventDto body = createUpdateEventDto(AdminEventUpdateAction.REJECT_EVENT);
 
         when(eventRepository.findById(EVENT_ID)).thenReturn(Optional.of(event));
 
-        assertThatThrownBy(() -> eventService.updateEventByAdmin(EVENT_ID, body))
+        assertThatThrownBy(() -> eventService.updateEvent(EVENT_ID, body))
                 .isInstanceOf(UnavailableUpdateException.class)
                 .hasMessageContaining("Event");
 
@@ -475,18 +479,18 @@ class PrivateEventServiceTests {
     }
 
     @Test
-    void updateEventByAdmin_rejectAction_mapsToCancelledStatus() {
+    void updateEvent_rejectAction_mapsToCancelledStatus() {
         long eventId = 1L;
         Event event = createTestEvent(eventId, 1L, 3L, EventStatus.PENDING);
 
-        UpdateEventDto body = createUpdateEventDto(EventUpdateAction.REJECT_EVENT);
+        AdminUpdateEventDto body = createUpdateEventDto(AdminEventUpdateAction.REJECT_EVENT);
 
         ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 5L);
         when(statsClient.getStatistics(any(), any(), anyList(), anyBoolean())).thenReturn(List.of(stats));
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
         when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        EventDto result = eventService.updateEventByAdmin(eventId, body);
+        EventDto result = eventService.updateEvent(eventId, body);
 
         assertThat(result.getStatus()).isEqualTo(EventStatus.CANCELED);
     }
@@ -512,7 +516,6 @@ class PrivateEventServiceTests {
                 .requestModeration(true)
                 .status(status)
                 .title("Test Event Title")
-                .views(7L)
                 .build();
     }
 
@@ -545,8 +548,8 @@ class PrivateEventServiceTests {
                 .build();
     }
 
-    private UpdateEventDto createTestUpdateEventDto(EventUpdateAction action) {
-        return UpdateEventDto.builder()
+    private UserUpdateEventDto createTestUpdateEventDto(UserEventUpdateAction action) {
+        return UserUpdateEventDto.builder()
                 .annotation("Updated annotation text that meets the minimum length of 20 characters requirement for validation.")
                 .category(2L)
                 .description("Updated detailed description that satisfies the 20–7000 character size constraint.")
@@ -564,8 +567,6 @@ class PrivateEventServiceTests {
         return RequestDto.builder()
                 .id(requestId)
                 .created(LocalDateTime.now())
-                .eventId(eventId)
-                .requesterId(requesterId)
                 .status(status)
                 .build();
     }
@@ -577,8 +578,8 @@ class PrivateEventServiceTests {
                 .build();
     }
 
-    public UpdateEventDto createUpdateEventDto(EventUpdateAction action) {
-        return UpdateEventDto.builder()
+    public AdminUpdateEventDto createUpdateEventDto(AdminEventUpdateAction action) {
+        return AdminUpdateEventDto.builder()
                 .title("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 .annotation("A".repeat(20))
                 .description("A".repeat(20))
