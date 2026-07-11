@@ -15,25 +15,6 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 @SuppressWarnings("unused")
 public class ErrorHandler {
-    @ExceptionHandler
-    public ResponseEntity<ApiError> unexpected(Throwable e) {
-        return createErrorResponse(
-                "unexpected error",
-                e.getMessage(),
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
-    }
-
-    private ResponseEntity<ApiError> createErrorResponse(String message, String reason, HttpStatus status) {
-        return ResponseEntity.status(status).body(
-                new ApiError(
-                        message,
-                        reason,
-                        status.toString(),
-                        LocalDateTime.now()
-                )
-        );
-    }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) throws NoSuchMethodException {
@@ -91,5 +72,26 @@ public class ErrorHandler {
     @ExceptionHandler
     public ResponseEntity<ApiError> earlyDate(EarlyDateException e) {
         return createErrorResponse("date is early", e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> unexpected(RuntimeException e) {
+        return createErrorResponse(
+                "unexpected error",
+                e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    private ResponseEntity<ApiError> createErrorResponse(String message, String reason, HttpStatus status) {
+        return ResponseEntity.status(status).body(
+                new ApiError(
+                        message,
+                        reason,
+                        status.toString(),
+                        LocalDateTime.now()
+                )
+        );
     }
 }

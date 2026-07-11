@@ -16,5 +16,7 @@ public interface RequestService {
 
     ParticipationRequestDto create(String userId, String eventId);
 
+    ParticipationRequestDto cancelRequest(String userId, String requestId);
+
     List<ParticipationRequestDto> getUserRequests(String requesterId);
 }

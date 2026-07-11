@@ -3,7 +3,6 @@ package ru.practicum.explorewithme.mapper;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.practicum.explorewithme.dto.EventShortDto;
 import ru.practicum.explorewithme.dto.ParticipationRequestDto;
 import ru.practicum.explorewithme.dto.UserShortDto;
 import ru.practicum.explorewithme.entity.Request;
@@ -14,24 +13,14 @@ public class ParticipationRequestMapper {
 
     public ParticipationRequestDto toParticipationRequestDto(Request request) {
 
-        UserShortDto userDto;
+        UserShortDto requesterDto;
         if (request.getRequester() != null) {
-            userDto = new UserShortDto(
+            requesterDto = new UserShortDto(
                     request.getRequester().getId(),
                     request.getRequester().getName()
             );
         } else {
-            userDto = null;
-        }
-
-        EventShortDto eventDto;
-        if (request.getEvent() != null) {
-            eventDto = new EventShortDto(
-                    request.getEvent().getId(),
-                    request.getEvent().getDescription()
-            );
-        } else {
-            eventDto = null;
+            requesterDto = null;
         }
 
         return new ParticipationRequestDto(
@@ -39,8 +28,8 @@ public class ParticipationRequestMapper {
                 request.getCreated(),
                 request.getEvent() != null ? request.getEvent().getId() : null,
                 request.getRequester() != null ? request.getRequester().getId() : null,
-                eventDto,
-                userDto,
+                requesterDto,
+                request.getEvent() != null ? request.getEvent().getId() : null,
                 request.getStatus()
         );
     }

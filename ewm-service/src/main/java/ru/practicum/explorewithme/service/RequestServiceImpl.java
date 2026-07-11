@@ -3,12 +3,14 @@ package ru.practicum.explorewithme.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.explorewithme.dto.EventStatus;
 import ru.practicum.explorewithme.dto.ParticipationRequestDto;
 import ru.practicum.explorewithme.dto.RequestDto;
 import ru.practicum.explorewithme.dto.RequestStatus;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.Request;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.mapper.ParticipationRequestMapper;
@@ -80,8 +82,28 @@ public class RequestServiceImpl implements RequestService {
         Long userIdL = Long.parseLong(userId);
         Long eventIdL = Long.parseLong(eventId);
 
+        Optional<Request> optRequest = requestRepository.findByEventIdAndRequesterId(eventIdL, userIdL);
+
+        if (optRequest.isPresent()) {
+            throw new DuplicatedDataException("request", "eventId and userId", eventId);
+        }
+
         Event event = eventRepository.findById(eventIdL)
                 .orElseThrow(() -> new NotFoundException("Event", eventIdL));
+
+        if (event.getInitiator() != null && event.getInitiator().getId() == userIdL ) {
+            throw new DuplicatedDataException("request", "eventId and userId", eventId);
+        }
+
+        int count = Math.toIntExact(requestRepository.countByEventId(eventIdL));
+
+        if (event.getParticipantLimit() != 0 && count >= event.getParticipantLimit()) {
+            throw new DuplicatedDataException("request", "eventId and userId", eventId);
+        }
+
+        if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
+            throw new DuplicatedDataException("request", "eventId and userId", eventId);
+        }
 
         User requestor = userRepository.findById(userIdL)
                 .orElseThrow(() -> new NotFoundException("User", userIdL));
@@ -89,8 +111,34 @@ public class RequestServiceImpl implements RequestService {
         request.setCreated(now);
         request.setRequester(requestor);
         request.setEvent(event);
+
+        if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
+            request.setStatus(RequestStatus.CONFIRMED);
+        } else {
+            request.setStatus(RequestStatus.PENDING);
+        }
         Request createdRequest = requestRepository.save(request);
         return requestMapper.toParticipationRequestDto(createdRequest);
+    }
+
+
+    @Override
+    @Transactional
+    public ParticipationRequestDto cancelRequest(String userId, String requestId) {
+        Long userIdL = Long.parseLong(userId);
+        Long requestIdL = Long.parseLong(requestId);
+
+
+        Request request = requestRepository.findById(requestIdL)
+                .orElseThrow(() -> new NotFoundException("Request", requestIdL));
+
+        if(request.getStatus().equals(RequestStatus.CONFIRMED)) {
+            throw new DuplicatedDataException("request", "status", RequestStatus.CONFIRMED);
+        }
+
+        request.setStatus(RequestStatus.CANCELED);
+        Request updatedRequest = requestRepository.save(request);
+        return requestMapper.toParticipationRequestDto(updatedRequest);
     }
 
     @Override
