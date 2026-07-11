@@ -17,10 +17,15 @@ import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
 
 @WebMvcTest(PrivateEventController.class)
 public class PrivateEventControllerTests {
+    private static final String URL_BASE = ACCESS_PRIVATE + "/{" + ID_USER + "}";
+    private static final String URL_BASE_EVENTS = URL_BASE + URL_EVENTS;
+    private static final String URL_BASE_EVENTS_ID = URL_BASE_EVENTS + "/{" + ID_EVENT + "}";
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -41,7 +46,7 @@ public class PrivateEventControllerTests {
     void setUp() {
         LocalDateTime time = LocalDateTime.of(2026, 8, 10, 14, 0, 0);
         LocalDateTime created = LocalDateTime.of(2026, 7, 10, 14, 0, 0);
-        Location location = new Location(1,1);
+        Location location = new Location(1, 1);
         UserShortDto initiator = UserShortDto.builder()
                 .id(1L)
                 .name("Name")
@@ -113,7 +118,7 @@ public class PrivateEventControllerTests {
         when(eventService.createEvent(userId, postRequest))
                 .thenReturn(response);
 
-        mvc.perform(post(PrivateEventController.URL_BASE, userId)
+        mvc.perform(post(URL_BASE_EVENTS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(postRequest)))
                 .andExpect(status().isCreated());
@@ -126,7 +131,7 @@ public class PrivateEventControllerTests {
         when(eventService.getEvents(userId, 1, 1))
                 .thenReturn(List.of(response));
 
-        mvc.perform(get(PrivateEventController.URL_BASE, userId)
+        mvc.perform(get(URL_BASE_EVENTS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(postRequest)))
                 .andExpect(status().isOk());
@@ -140,7 +145,7 @@ public class PrivateEventControllerTests {
         when(eventService.getEvent(userId, eventId))
                 .thenReturn(response);
 
-        mvc.perform(get(PrivateEventController.URL_BASE, userId)
+        mvc.perform(get(URL_BASE_EVENTS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(postRequest)))
                 .andExpect(status().isOk());
@@ -154,7 +159,7 @@ public class PrivateEventControllerTests {
         when(eventService.updateEvent(userId, eventId, updateRequest))
                 .thenReturn(response);
 
-        mvc.perform(patch(PrivateEventController.URL_BASE + "/{eventId}", userId, eventId)
+        mvc.perform(patch(URL_BASE_EVENTS_ID, userId, eventId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(postRequest)))
                 .andExpect(status().isOk());
@@ -168,7 +173,7 @@ public class PrivateEventControllerTests {
         when(eventService.getRequests(userId, eventId))
                 .thenReturn(List.of(responseRequest));
 
-        mvc.perform(patch(PrivateEventController.URL_BASE + "/{eventId}" + PrivateEventController.API_PREFIX_REQUESTS, userId, eventId)
+        mvc.perform(patch(URL_BASE_EVENTS_ID + URL_REQUESTS, userId, eventId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(postRequest)))
                 .andExpect(status().isOk());
@@ -182,7 +187,7 @@ public class PrivateEventControllerTests {
         when(eventService.updateRequestStatuses(userId, eventId, update))
                 .thenReturn(responseStatuses);
 
-        mvc.perform(patch(PrivateEventController.URL_BASE + "/{eventId}" + PrivateEventController.API_PREFIX_REQUESTS, userId, eventId)
+        mvc.perform(patch(URL_BASE_EVENTS_ID + URL_REQUESTS, userId, eventId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(postRequest)))
                 .andExpect(status().isOk());

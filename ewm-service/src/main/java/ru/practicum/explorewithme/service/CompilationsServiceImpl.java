@@ -4,26 +4,29 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.dto.CompilationDto;
+import ru.practicum.explorewithme.dto.EventDto;
 import ru.practicum.explorewithme.dto.NewCompilationDto;
 import ru.practicum.explorewithme.dto.UpdateCompilationRequest;
 import ru.practicum.explorewithme.entity.Compilation;
 import ru.practicum.explorewithme.entity.CompilationEvent;
 import ru.practicum.explorewithme.entity.Event;
-import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.mapper.CompilationMapper;
 import ru.practicum.explorewithme.repository.CompilationRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CompilationsServiceImpl implements CompilationsService {
+public class CompilationsServiceImpl extends ServiceBase implements CompilationsService {
     private final EventRepository eventRepository;
     private final CompilationRepository compilationRepository;
+    private final StatsClient statsClient;
 
     @Override
     @Transactional
@@ -35,7 +38,7 @@ public class CompilationsServiceImpl implements CompilationsService {
         linkEvents(compilation, events);
         Compilation result = compilationRepository.save(compilation);
         log.debug("Подборка {} сохранена", compilation);
-        return CompilationMapper.toCompilationDto(result);
+        return composeComplicationResponse(result);
     }
 
     private List<Event> findEvents(List<Long> eventIds) {
@@ -56,38 +59,40 @@ public class CompilationsServiceImpl implements CompilationsService {
         );
     }
 
+    private CompilationDto composeComplicationResponse(Compilation compilation) {
+        CompilationDto compilationDto = CompilationMapper.toCompilationDto(compilation);
+        List<Event> events = compilation.getEvents().stream()
+                .map(CompilationEvent::getEvent)
+                .toList();
+        if (events.isEmpty()) {
+            return compilationDto;
+        }
+        Map<String, Long> uriViews = getStats(statsClient, events);
+        List<EventDto> eventWithStats = getEventsWithStats(events, uriViews);
+        compilationDto.setEvents(eventWithStats);
+        return compilationDto;
+    }
+
     @Override
     @Transactional
     public void deleteCompilation(long compId) {
         log.trace("Инициировано удаление подборки с id={}", compId);
-        checkCompilationExistsBy(compId);
+        checkEntityExistsIn(compilationRepository, compId);
         compilationRepository.deleteById(compId);
         log.debug("Подборка с id={} удалена", compId);
-    }
-
-    private void checkCompilationExistsBy(long id) {
-        if (!compilationRepository.existsById(id)) {
-            log.info("Подборка с id={} не найдена", id);
-            throw new NotFoundException("compilation", id);
-        }
     }
 
     @Override
     @Transactional
     public CompilationDto updateCompilation(long compId, UpdateCompilationRequest body) {
         log.trace("Инициировано обновление сборки с id={}. Тело запроса: {}", compId, body);
-        Compilation compilation = findCompilationBy(compId);
+        Compilation compilation = findEntityIn(compilationRepository, compId);
         log.trace("Подборка найдена: {}", compilation);
         Compilation update = updateCompilationData(compilation, body);
         log.debug("Создано обновление подборки: {}", update);
         Compilation result = compilationRepository.save(update);
         log.debug("Обновление {} сохранено", update);
-        return CompilationMapper.toCompilationDto(result);
-    }
-
-    private Compilation findCompilationBy(long id) {
-        return compilationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("compilation", id));
+        return composeComplicationResponse(result);
     }
 
     private Compilation updateCompilationData(Compilation compilation, UpdateCompilationRequest update) {
@@ -120,7 +125,7 @@ public class CompilationsServiceImpl implements CompilationsService {
     @Override
     public CompilationDto getCompilation(long compId) {
         log.trace("Инициировано получение подборки с id={}", compId);
-        Compilation result = findCompilationBy(compId);
+        Compilation result = findEntityIn(compilationRepository, compId);
         log.debug("Найдена подборка {}", result);
         return CompilationMapper.toCompilationDto(result);
     }

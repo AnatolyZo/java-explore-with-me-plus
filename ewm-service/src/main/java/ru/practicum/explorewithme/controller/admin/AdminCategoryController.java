@@ -5,20 +5,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.ExploreWithMeMainService;
 import ru.practicum.explorewithme.dto.CategoryDto;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
 import ru.practicum.explorewithme.service.CategoryService;
 
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
+
 @RestController
-@RequestMapping(path = AdminCategoryController.URL_BASE)
+@RequestMapping(path = ACCESS_ADMIN + URL_CATEGORIES)
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class AdminCategoryController {
-    public static final String URL_BASE = ExploreWithMeMainService.URL_ADMIN + "/categories";
-    public static final String ID_CATEGORY = "catId";
-
     private final CategoryService categoryService;
 
     @PostMapping
@@ -35,8 +33,10 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/{" + ID_CATEGORY + "}")
-    public ResponseEntity<CategoryDto> updateCategory(@PathVariable(name = ID_CATEGORY) long catId,
-                                                      @RequestBody @Valid UpdateCategoryDto body) {
+    public ResponseEntity<CategoryDto> updateCategory(
+            @PathVariable(name = ID_CATEGORY) long catId,
+            @RequestBody @Valid UpdateCategoryDto body
+    ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(categoryService.updateCategory(catId, body));
     }

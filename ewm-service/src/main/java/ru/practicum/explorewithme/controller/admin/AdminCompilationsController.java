@@ -5,18 +5,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.ExploreWithMeMainService;
-import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.dto.CompilationDto;
+import ru.practicum.explorewithme.dto.NewCompilationDto;
+import ru.practicum.explorewithme.dto.UpdateCompilationRequest;
 import ru.practicum.explorewithme.service.CompilationsService;
 
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
+
 @RestController
-@RequestMapping(path = AdminCompilationsController.URL_BASE)
+@RequestMapping(path = ACCESS_ADMIN + URL_COMPILATIONS)
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class AdminCompilationsController {
-    public static final String URL_BASE = ExploreWithMeMainService.URL_ADMIN + "/compilations";
-    public static final String ID_COMPILATION = "compId";
-
     private final CompilationsService compilationsService;
 
     @PostMapping
@@ -33,8 +33,10 @@ public class AdminCompilationsController {
     }
 
     @PatchMapping("/{" + ID_COMPILATION + "}")
-    public ResponseEntity<CompilationDto> updateCompilation(@PathVariable(name = ID_COMPILATION) long compId,
-                                                      @RequestBody @Valid UpdateCompilationRequest body) {
+    public ResponseEntity<CompilationDto> updateCompilation(
+            @PathVariable(name = ID_COMPILATION) long compId,
+            @RequestBody @Valid UpdateCompilationRequest body
+    ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(compilationsService.updateCompilation(compId, body));
     }

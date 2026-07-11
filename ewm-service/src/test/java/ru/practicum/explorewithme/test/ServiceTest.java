@@ -3,7 +3,10 @@ package ru.practicum.explorewithme.test;
 import org.assertj.core.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.data.jpa.repository.JpaRepository;
+import ru.practicum.explorewithme.StatsClient;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class ServiceTest extends TestBase {
@@ -46,5 +49,15 @@ public class ServiceTest extends TestBase {
     protected <E> void doNothingOnDeleteIn(JpaRepository<E, Long> repository) {
         Mockito.doNothing()
                 .when(repository).deleteById(Mockito.anyLong());
+    }
+
+    protected void whenClientDoNothing(StatsClient statsClient) {
+        Mockito.when(statsClient.getStatistics(
+                        Mockito.any(LocalDateTime.class),
+                        Mockito.any(LocalDateTime.class),
+                        Mockito.any(),
+                        Mockito.anyBoolean()
+                ))
+                .thenReturn(new ArrayList<>());
     }
 }

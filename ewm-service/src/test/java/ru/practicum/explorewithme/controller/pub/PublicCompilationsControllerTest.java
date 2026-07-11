@@ -11,6 +11,7 @@ import ru.practicum.explorewithme.service.CompilationsService;
 import ru.practicum.explorewithme.test.ControllerTest;
 
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
 
 public class PublicCompilationsControllerTest extends ControllerTest {
     @InjectMocks
@@ -47,7 +48,7 @@ public class PublicCompilationsControllerTest extends ControllerTest {
         long compilationId = 1L;
 
         // Act
-        ResultActions result = performGet(createIdUrl(PublicCompilationsController.URL_BASE, compilationId));
+        ResultActions result = performGet(createIdUrl(URL_COMPILATIONS, compilationId));
 
         // Assert
         expectStatusOk(result);
@@ -57,9 +58,9 @@ public class PublicCompilationsControllerTest extends ControllerTest {
 
     private String createGetCompilationsUrl(Boolean pinned, int from, int size) {
         return String.format("%s?%s=%b&%s=%d&%s=%d",
-                PublicCompilationsController.URL_BASE,
-                PublicCompilationsController.PARAM_PINNED, pinned,
-                PublicCompilationsController.PARAM_FROM, from,
-                PublicCompilationsController.PARAM_SIZE, size);
+                URL_COMPILATIONS,
+                PARAM_PINNED, pinned,
+                PARAM_FROM, from,
+                PARAM_SIZE, size);
     }
 }

@@ -17,11 +17,15 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
 
 @WebMvcTest(AdminEventController.class)
 public class AdminEventControllerTests {
+    private static final String URL_BASE = ACCESS_ADMIN + URL_EVENTS;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -90,7 +94,7 @@ public class AdminEventControllerTests {
         when(eventService.searchEvents(null, null, null, null, null, 0, 10))
                 .thenReturn(responseList);
 
-        mvc.perform(get(AdminEventController.URL_BASE))
+        mvc.perform(get(URL_BASE))
                 .andExpect(status().isOk());
     }
 
@@ -107,7 +111,7 @@ public class AdminEventControllerTests {
         when(eventService.searchEvents(users, states, categories, rangeStart, rangeEnd, from, size))
                 .thenReturn(responseList);
 
-        mvc.perform(get(AdminEventController.URL_BASE)
+        mvc.perform(get(URL_BASE)
                         .param("users", "1", "2")
                         .param("states", "PUBLISHED", "CANCELLED")
                         .param("categories", "3")
@@ -126,7 +130,7 @@ public class AdminEventControllerTests {
         when(eventService.searchEvents(any(), any(), any(), anyString(), anyString(), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
 
-        mvc.perform(get(AdminEventController.URL_BASE))
+        mvc.perform(get(URL_BASE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(0));
@@ -141,7 +145,7 @@ public class AdminEventControllerTests {
 
         String content = objectMapper.writeValueAsString(updateRequest);
 
-        mvc.perform(patch(AdminEventController.URL_BASE + "/{" + AdminEventController.PATH_VAR_ID + "}", eventId)
+        mvc.perform(patch(URL_BASE + "/{" + ID_EVENT + "}", eventId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(content))
                 .andExpect(status().isOk())

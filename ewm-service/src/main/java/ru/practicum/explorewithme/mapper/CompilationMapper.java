@@ -14,11 +14,6 @@ public class CompilationMapper {
 
     public static CompilationDto toCompilationDto(Compilation compilation) {
         return CompilationDto.builder()
-                .events(
-                        compilation.getEvents().stream()
-                                .map(event -> EventMapper.mapToEventDto(event.getEvent(), 0))
-                                .toList()
-                )
                 .id(compilation.getId())
                 .pinned(compilation.isPinned())
                 .title(compilation.getTitle())

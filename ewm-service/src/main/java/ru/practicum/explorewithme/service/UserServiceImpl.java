@@ -4,13 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.explorewithme.exception.DuplicatedDataException;
-import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
 import ru.practicum.explorewithme.dto.NewUserRequest;
 import ru.practicum.explorewithme.dto.UserDto;
-import ru.practicum.explorewithme.mapper.UserMapper;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.mapper.UserMapper;
 import ru.practicum.explorewithme.repository.UserRepository;
 
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends ServiceBase implements UserService {
     private final UserRepository userRepository;
 
     @Override
@@ -51,16 +50,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("User", userId);
-        }
-
+        checkEntityExistsIn(userRepository, userId);
         userRepository.deleteById(userId);
-    }
-
-    @Override
-    public User getUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User", userId));
     }
 }

@@ -17,24 +17,14 @@ import ru.practicum.explorewithme.service.EventService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
+
 @RestController
-@RequestMapping(path = PublicEventController.URL_BASE)
+@RequestMapping(path = URL_EVENTS)
 @RequiredArgsConstructor
 @Validated
 @SuppressWarnings("unused")
 public class PublicEventController {
-    public static final String URL_BASE = "/events";
-    public static final String EVENT_ID = "id";
-    public static final String PARAM_TEXT = "text";
-    public static final String PARAM_CATEGORIES = "categories";
-    public static final String PARAM_PAID = "paid";
-    public static final String PARAM_RANGE_START = "rangeStart";
-    public static final String PARAM_RANGE_END = "rangeEnd";
-    public static final String PARAM_ONLY_AVAILABLE = "onlyAvailable";
-    public static final String PARAM_SORT = "sort";
-    public static final String PARAM_FROM = "from";
-    public static final String PARAM_SIZE = "size";
-    private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     private final EventService eventService;
 
@@ -48,10 +38,13 @@ public class PublicEventController {
             @RequestParam(name = PARAM_RANGE_END, required = false)
             @DateTimeFormat(pattern = DATE_TIME_PATTERN) LocalDateTime rangeEnd,
             @RequestParam(name = PARAM_ONLY_AVAILABLE, required = false, defaultValue = "false") boolean onlyAvailable,
-            @RequestParam(name = PARAM_SORT, required = false) PublicEventSort sort,
-            @RequestParam(name = PARAM_FROM, required = false, defaultValue = "0") @PositiveOrZero int from,
-            @RequestParam(name = PARAM_SIZE, required = false, defaultValue = "10") @Positive int size,
-            HttpServletRequest request) {
+            @RequestParam(name = PARAM_SORT, required = false/*ТУТЬ(см ниже)*/) PublicEventSort sort,
+            @RequestParam(name = PARAM_FROM, required = false, defaultValue = "0")
+            @PositiveOrZero int from,
+            @RequestParam(name = PARAM_SIZE, required = false, defaultValue = "10")
+            @Positive int size,
+            HttpServletRequest request
+    ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(eventService.getPublishedEvents(
                         text,
@@ -60,6 +53,7 @@ public class PublicEventController {
                         rangeStart,
                         rangeEnd,
                         onlyAvailable,
+                        /// Вроде по дефолту можно строку прописать
                         sort == null ? PublicEventSort.EVENT_DATE : sort,
                         from,
                         size,
@@ -68,9 +62,9 @@ public class PublicEventController {
                 ));
     }
 
-    @GetMapping("/{" + EVENT_ID + "}")
-    public ResponseEntity<EventDto> getEvent(@PathVariable(name = EVENT_ID) long eventId,
-                                                 HttpServletRequest request) {
+    @GetMapping("/{" + ID_EVENT + "}")
+    public ResponseEntity<EventDto> getEvent(@PathVariable(name = ID_EVENT) long eventId,
+                                             HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(eventService.getPublishedEvent(
                         eventId,
