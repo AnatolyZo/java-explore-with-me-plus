@@ -334,7 +334,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     }
 
     private void checkTimeBeforeEventStart(LocalDateTime eventDate, int minOffset) {
-        if (!eventDate.isAfter(LocalDateTime.now().plusHours(minOffset))) {
+        if (!eventDate.isAfter(LocalDateTime.now().plusHours(minOffset).minusSeconds(1))) {
             throw new EarlyDateException(minOffset, eventDate);
         }
     }
