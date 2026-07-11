@@ -39,7 +39,6 @@ import ru.practicum.explorewithme.repository.specification.UsersEventSearchSpeci
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -150,7 +149,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
             //Обновляем количество свободных мест
             event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests.size());
             eventRepository.save(event);
-            System.out.println();
+
             return ChangedRequestStatusesDto.builder()
                     .confirmedRequests(confirmedRequests)
                     .rejectedRequests(rejectedRequests)
@@ -220,7 +219,6 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         saveHit(ip, uri);
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
                 .orElseThrow(() -> new IdNotFoundException(eventId));
-        Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
         return getEventsWithStats(List.of(event), statsClient).getFirst();
     }
 
