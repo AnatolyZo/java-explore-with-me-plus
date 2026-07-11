@@ -1,9 +1,11 @@
 package ru.practicum.explorewithme.service;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import ru.practicum.explorewithme.exception.WrongDateIntervalException;
 import ru.practicum.explorewithme.repository.EndpointHitRepository;
 import ru.practicum.explorewithme.test.ServiceTest;
 
@@ -15,6 +17,22 @@ public class ViewStatsServiceImplTest extends ServiceTest {
     private ViewStatsServiceImpl viewStatsService;
     @Mock
     private EndpointHitRepository endpointHitRepository;
+
+    @Test
+    public void getStatistics_StartAfterEnd_WrongDateIntervalException() {
+        // Arrange
+        LocalDateTime start = NOW.minusDays(1);
+        LocalDateTime end = NOW.minusDays(2);
+        List<String> uris = List.of("");
+        boolean unique = true;
+
+        // Act
+        Throwable thrown = Assertions.catchThrowable(() -> viewStatsService.getStatistics(start, end, uris, unique));
+
+        // Assert
+        Assertions.assertThat(thrown)
+                .isInstanceOf(WrongDateIntervalException.class);
+    }
 
     @Test
     public void getStatistics_UniqueTrue_UniqueMethodCalls() {
@@ -55,7 +73,7 @@ public class ViewStatsServiceImplTest extends ServiceTest {
     }
 
     @Test
-    public void getStatistics_NllUris_UniqueFalse_UsualMethodCalls() {
+    public void getStatistics_NullUris_UniqueFalse_UsualMethodCalls() {
         // Arrange
         LocalDateTime start = NOW.minusDays(2);
         LocalDateTime end = NOW.minusDays(1);
@@ -72,7 +90,7 @@ public class ViewStatsServiceImplTest extends ServiceTest {
     }
 
     @Test
-    public void getStatistics_NllUris_UniqueTrue_UsualMethodCalls() {
+    public void getStatistics_NullUris_UniqueTrue_UniqueMethodCalls() {
         // Arrange
         LocalDateTime start = NOW.minusDays(2);
         LocalDateTime end = NOW.minusDays(1);
