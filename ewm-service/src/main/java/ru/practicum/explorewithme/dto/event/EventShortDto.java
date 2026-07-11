@@ -1,5 +1,6 @@
 package ru.practicum.explorewithme.dto.event;
 
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
