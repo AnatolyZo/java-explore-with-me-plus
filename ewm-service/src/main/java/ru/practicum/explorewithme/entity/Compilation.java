@@ -10,6 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Entity
 @Table(name = "compilations", schema = "public")
 public class Compilation {
@@ -17,10 +18,8 @@ public class Compilation {
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Setter
     @Column(name = "pinned")
     private boolean pinned;
-    @Setter
     @Column(name = "title", length = 50)
     private String title;
     @OneToMany(mappedBy = "compilation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

@@ -8,26 +8,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import ru.practicum.explorewithme.exception.DuplicatedDataException;
-import ru.practicum.explorewithme.exception.NotFoundException;
-import ru.practicum.explorewithme.service.UserServiceImpl;
 import ru.practicum.explorewithme.dto.NewUserRequest;
 import ru.practicum.explorewithme.dto.UserDto;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.repository.UserRepository;
+import ru.practicum.explorewithme.service.UserServiceImpl;
 
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
@@ -163,32 +157,8 @@ class UserServiceImplTest {
     void deleteUser_whenUserDoesNotExist_shouldThrowNotFoundException() {
         when(userRepository.existsById(1L)).thenReturn(false);
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.deleteUser(1L));
+        assertThrows(IdNotFoundException.class, () -> userService.deleteUser(1L));
 
-        assertEquals("User with id=1 not exists", exception.getMessage());
         verify(userRepository, never()).deleteById(1L);
-    }
-
-    @Test
-    void getUserById_whenUserExists_shouldReturnUser() {
-        User user = User.builder()
-                .id(1L)
-                .name("Test User")
-                .email("test-user@mail.com")
-                .build();
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        User result = userService.getUserById(1L);
-
-        assertSame(user, result);
-    }
-
-    @Test
-    void getUserById_whenUserDoesNotExist_shouldThrowNotFoundException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.getUserById(1L));
-
-        assertEquals("User with id=1 not exists", exception.getMessage());
     }
 }

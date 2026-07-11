@@ -8,8 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class ExploreWithMeMainService {
-    public static final String URL_ADMIN = "/admin";
-    public static final String URL_PRIVATE = "/users/{userId}";
+    public static final String APP_NAME = "ewm-main-service";
 
     public static void main(String[] args) {
         SpringApplication.run(ExploreWithMeMainService.class, args);

@@ -11,7 +11,7 @@ import ru.practicum.explorewithme.dto.UpdateCategoryDto;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
@@ -82,7 +82,7 @@ public class CategoryServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> categoryService.deleteCategory(absentId));
 
         // Assert
-        assertException(thrown, NotFoundException.class);
+        assertException(thrown, IdNotFoundException.class);
     }
 
     @Test
@@ -147,7 +147,7 @@ public class CategoryServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> categoryService.updateCategory(absentId, body));
 
         // Assert
-        assertException(thrown, NotFoundException.class);
+        assertException(thrown, IdNotFoundException.class);
     }
 
     @Test
@@ -212,7 +212,7 @@ public class CategoryServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> categoryService.getCategory(absentId));
 
         // Assert
-        assertException(thrown, NotFoundException.class);
+        assertException(thrown, IdNotFoundException.class);
     }
 
     private void whenCategoryExistBy(String name) {

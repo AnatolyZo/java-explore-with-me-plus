@@ -11,6 +11,7 @@ import ru.practicum.explorewithme.service.CategoryService;
 import ru.practicum.explorewithme.test.ControllerTest;
 
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
 
 public class PublicCategoryControllerTest extends ControllerTest {
     @InjectMocks
@@ -46,7 +47,7 @@ public class PublicCategoryControllerTest extends ControllerTest {
         long categoryId = 1L;
 
         // Act
-        ResultActions result = performGet(createIdUrl(PublicCategoryController.URL_BASE, categoryId));
+        ResultActions result = performGet(createIdUrl(URL_CATEGORIES, categoryId));
 
         // Assert
         expectStatusOk(result);
@@ -56,8 +57,8 @@ public class PublicCategoryControllerTest extends ControllerTest {
 
     private String createGetCategoriesUrl(int from, int size) {
         return String.format("%s?%s=%d&%s=%d",
-                PublicCategoryController.URL_BASE,
-                PublicCategoryController.PARAM_FROM, from,
-                PublicCategoryController.PARAM_SIZE, size);
+                URL_CATEGORIES,
+                PARAM_FROM, from,
+                PARAM_SIZE, size);
     }
 }

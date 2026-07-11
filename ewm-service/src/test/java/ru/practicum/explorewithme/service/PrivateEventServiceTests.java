@@ -20,10 +20,12 @@ import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.EarlyDateException;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
+import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.EventSearchSpecification;
+import ru.practicum.explorewithme.repository.UserRepository;
 import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
 import java.time.LocalDateTime;
@@ -46,6 +48,12 @@ class PrivateEventServiceTests {
 
     @Mock
     private EventRepository eventRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private CategoryService categoryService;
@@ -139,8 +147,8 @@ class PrivateEventServiceTests {
         Category category = createTestCategory(CATEGORY_ID);
         User initiator = createTestUser(USER_ID);
 
-        when(categoryService.findCategoryBy(newEventDto.getCategory())).thenReturn(category);
-        when(userService.getUserById(USER_ID)).thenReturn(initiator);
+        when(categoryRepository.findById(newEventDto.getCategory())).thenReturn(Optional.of(category));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(initiator));
         when(eventRepository.save(any(Event.class))).thenReturn(expectedEvent);
 
         EventDto result = eventService.createEvent(USER_ID, newEventDto);
@@ -148,8 +156,8 @@ class PrivateEventServiceTests {
         assertThat(result.getId()).isEqualTo(expectedEvent.getId());
         assertThat(result.getStatus()).isEqualTo(EventStatus.PENDING);
 
-        verify(categoryService).findCategoryBy(newEventDto.getCategory());
-        verify(userService).getUserById(USER_ID);
+        verify(categoryRepository).findById(newEventDto.getCategory());
+        verify(userRepository).findById(USER_ID);
         verify(eventRepository).save(any(Event.class));
     }
 
@@ -185,7 +193,7 @@ class PrivateEventServiceTests {
     void getEvent_throwsNotFoundException_whenEventDoesNotBelongToUser() {
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> eventService.getEvent(USER_ID, EVENT_ID));
+        assertThrows(IdNotFoundException.class, () -> eventService.getEvent(USER_ID, EVENT_ID));
     }
 
     @Test
@@ -261,7 +269,7 @@ class PrivateEventServiceTests {
     void getRequests_throwsNotFoundException_whenEventDoesNotExist() {
         when(eventRepository.existsByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(false);
 
-        assertThrows(NotFoundException.class, () -> eventService.getRequests(USER_ID, EVENT_ID));
+        assertThrows(IdNotFoundException.class, () -> eventService.getRequests(USER_ID, EVENT_ID));
     }
 
     @Test
@@ -448,8 +456,7 @@ class PrivateEventServiceTests {
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> eventService.updateEventByAdmin(eventId, body))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("Event");
+                .isInstanceOf(IdNotFoundException.class);
     }
 
     @Test

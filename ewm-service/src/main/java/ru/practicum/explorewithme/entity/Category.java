@@ -7,6 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Entity
 @Table(name = "categories", schema = "public")
 public class Category {
@@ -14,7 +15,6 @@ public class Category {
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Setter
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 }

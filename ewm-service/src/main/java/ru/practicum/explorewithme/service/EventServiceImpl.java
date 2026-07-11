@@ -5,10 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.explorewithme.ExploreWithMeMainService;
 import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
 import ru.practicum.explorewithme.dto.*;
@@ -18,56 +17,47 @@ import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.BadRequestException;
 import ru.practicum.explorewithme.exception.EarlyDateException;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
+import ru.practicum.explorewithme.hit.EndpointHitRequest;
 import ru.practicum.explorewithme.mapper.EventMapper;
 import ru.practicum.explorewithme.mapper.LocationMapper;
+import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.EventSearchSpecification;
+import ru.practicum.explorewithme.repository.UserRepository;
 import ru.practicum.explorewithme.repository.specification.EventSpecifications;
-import ru.practicum.explorewithme.hit.EndpointHitRequest;
-import ru.practicum.explorewithme.stats.ViewStatsResponse;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class EventServiceImpl implements EventService {
+public class EventServiceImpl extends ServiceBase implements EventService {
     private final EventRepository eventRepository;
-    private final CategoryService categoryService;
-    private final UserService userService;
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
     private final RequestService requestService;
     private final StatsClient statsClient;
-    private static final String API_PREFIX_EVENTS = "/events/";
-    private static final String APP_NAME = "ewm-main-service";
 
     @Override
     public List<EventDto> getEvents(long userId, int from, int size) {
         Pageable pageable = new OffsetPageRequest(from, size);
-
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable);
-
-        Map<String, Long> viewsByUri = getStats(events);
-
+        Map<String, Long> viewsByUri = getStats(statsClient, events);
         return getEventsWithStats(events, viewsByUri);
     }
 
     @Override
     @Transactional
     public EventDto createEvent(long userId, NewEventDto newEventDto) {
-        if (newEventDto.getEventDate() != null) {
-            int usersMinOffset = 2;
-            checkTimeBeforeEventStart(newEventDto.getEventDate(), usersMinOffset);
-        }
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!" + newEventDto);
-        //Получаем данные по категории, инициатору и месту проведения события
-        Category category = categoryService.findCategoryBy(newEventDto.getCategory());
-        User initiator = userService.getUserById(userId);
+        int usersMinOffset = 2;
+        checkTimeBeforeEventStart(newEventDto.getEventDate(), usersMinOffset);
+        Category category = findEntityIn(categoryRepository, newEventDto.getCategory());
+        User initiator = findEntityIn(userRepository, userId);
         Location location = newEventDto.getLocation();
         LocationEmbeddable locationEmbeddable = LocationMapper.mapToLocationEmbeddable(location.lat(), location.lon());
 
@@ -78,14 +68,14 @@ public class EventServiceImpl implements EventService {
         event.setRequestModeration(true);
 
         Event createdEvent = eventRepository.save(event);
-        return EventMapper.mapToEventDto(createdEvent,0);
+        return EventMapper.mapToEventDto(createdEvent, 0);
     }
 
     @Override
     public EventDto getEvent(long userId, long eventId) {
         Event event = getEventById(eventId, userId);
 
-        Map<String, Long> viewsByUri = getStats(List.of(event));
+        Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
 
         return EventMapper.mapToEventDto(event, getViews(event, viewsByUri));
     }
@@ -118,7 +108,7 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
 
-        Map<String, Long> viewsByUri = getStats(List.of(event));
+        Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
 
         return EventMapper.mapToEventDto(updatedEvent, getViews(event, viewsByUri));
     }
@@ -189,16 +179,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventShortDto> getPublishedEvents(String text,
-                                                   List<Long> categories,
-                                                   Boolean paid,
-                                                   LocalDateTime rangeStart,
-                                                   LocalDateTime rangeEnd,
-                                                   boolean onlyAvailable,
-                                                   PublicEventSort sort,
-                                                   int from,
-                                                   int size,
-                                                   String ip,
-                                                   String uri) {
+                                                  List<Long> categories,
+                                                  Boolean paid,
+                                                  LocalDateTime rangeStart,
+                                                  LocalDateTime rangeEnd,
+                                                  boolean onlyAvailable,
+                                                  PublicEventSort sort,
+                                                  int from,
+                                                  int size,
+                                                  String ip,
+                                                  String uri) {
         checkDateRange(rangeStart, rangeEnd);
         saveHit(ip, uri);
 
@@ -223,7 +213,7 @@ public class EventServiceImpl implements EventService {
             return List.of();
         }
 
-        Map<String, Long> viewsByUri = getStats(events);
+        Map<String, Long> viewsByUri = getStats(statsClient, events);
 
         List<EventShortDto> dtos = events.stream()
                 .map(event -> EventMapper.mapToEventShortDto(event, getViews(event, viewsByUri)))
@@ -242,8 +232,8 @@ public class EventServiceImpl implements EventService {
     public EventDto getPublishedEvent(long eventId, String ip, String uri) {
         saveHit(ip, uri);
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
-                .orElseThrow(() -> new NotFoundException("Event", eventId));
-        Map<String, Long> viewsByUri = getStats(List.of(event));
+                .orElseThrow(() -> new IdNotFoundException(eventId));
+        Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
 
         return EventMapper.mapToEventDto(event, getViews(event, viewsByUri));
     }
@@ -251,7 +241,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public Event getEventById(long eventId, long userId) {
         return eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Event", eventId));
+                .orElseThrow(() -> new IdNotFoundException(eventId));
     }
 
     @Override
@@ -272,7 +262,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Получаем статистику
-        Map<String, Long> viewsByUri = getStats(events);
+        Map<String, Long> viewsByUri = getStats(statsClient, events);
         return getEventsWithStats(events, viewsByUri);
     }
 
@@ -284,8 +274,7 @@ public class EventServiceImpl implements EventService {
             checkTimeBeforeEventStart(body.getEventDate(), adminsMinOffset);
         }
 
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event", eventId));
+        Event event = findEntityIn(eventRepository, eventId);
 
 
         if (!event.getStatus().equals(EventStatus.PENDING)) {
@@ -306,35 +295,9 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
 
-        Map<String, Long> viewsByUri = getStats(List.of(updatedEvent));
+        Map<String, Long> viewsByUri = getStats(statsClient, List.of(updatedEvent));
 
         return EventMapper.mapToEventDto(updatedEvent, getViews(updatedEvent, viewsByUri));
-    }
-
-    private Map<String, Long> getStats(List<Event> events) {
-        //Определяем самую раннюю дату создания события пользователем
-        LocalDateTime start = events.stream()
-                .map(Event::getCreatedOn)
-                .min(LocalDateTime::compareTo)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No events were found"));
-
-        //Верхняя граница для поиска
-        LocalDateTime end = LocalDateTime.now();
-
-        //Получаем список uri для отправки в сервер статистики
-        List<String> uris = events.stream()
-                .map(event -> API_PREFIX_EVENTS + event.getId())
-                .toList();
-
-        List<ViewStatsResponse> stats = statsClient.getStatistics(start, end, uris, false);
-        Map<String, Long> viewsByUri = new HashMap<>();
-        stats.forEach(stat -> viewsByUri.put(stat.getUri(), stat.getHits()));
-
-        return viewsByUri;
-    }
-
-    private long getViews(Event event, Map<String, Long> viewsByUri) {
-        return viewsByUri.getOrDefault(API_PREFIX_EVENTS + event.getId(), 0L);
     }
 
     private <T> List<T> getPage(List<T> source, int from, int size) {
@@ -348,7 +311,7 @@ public class EventServiceImpl implements EventService {
 
     private void saveHit(String ip, String uri) {
         statsClient.addStatistics(EndpointHitRequest.builder()
-                .app(APP_NAME)
+                .app(ExploreWithMeMainService.APP_NAME)
                 .uri(uri)
                 .ip(ip)
                 .timestamp(LocalDateTime.now())
@@ -361,25 +324,16 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private List<EventDto> getEventsWithStats(List<Event> events, Map<String, Long> viewsByUri) {
-        return events.stream()
-                .map(event -> EventMapper.mapToEventDto(event, getViews(event, viewsByUri)))
-                .toList();
-    }
-
     private void updateEventFields(Event event, UpdateEventDto update, EventStatus status) {
         if (update.getAnnotation() != null && !update.getAnnotation().isEmpty()) {
             event.setAnnotation(update.getAnnotation());
         }
-
         if (update.getDescription() != null && !update.getDescription().isEmpty()) {
             event.setDescription(update.getDescription());
         }
-
         if (update.getEventDate() != null) {
             event.setEventDate(update.getEventDate());
         }
-
         if (update.getLocation() != null) {
             LocationEmbeddable location = LocationMapper.mapToLocationEmbeddable(update.getLocation().lat(), update.getLocation().lon());
             event.setLocation(location);
@@ -410,7 +364,7 @@ public class EventServiceImpl implements EventService {
 
     private void checkEventExistence(long userId, long eventId) {
         if (!eventRepository.existsByIdAndInitiatorId(eventId, userId)) {
-            throw new NotFoundException("event from user", userId);
+            throw new IdNotFoundException(userId);
         }
     }
 

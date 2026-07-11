@@ -10,7 +10,6 @@ import ru.practicum.explorewithme.dto.UpdateCategoryDto;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
-import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
@@ -21,7 +20,7 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class CategoryServiceImpl implements CategoryService {
+public class CategoryServiceImpl extends ServiceBase implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;
 
@@ -46,17 +45,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategory(long catId) {
         log.trace("Инициировано удаление категории с id={}", catId);
-        checkCategoryExistsBy(catId);
+        checkEntityExistsIn(categoryRepository, catId);
         checkCategoryEventsExistsBy(catId);
         categoryRepository.deleteById(catId);
         log.debug("Категория с id={} удалена", catId);
-    }
-
-    private void checkCategoryExistsBy(long id) {
-        if (!categoryRepository.existsById(id)) {
-            log.info("Категория с id={} не найдена", id);
-            throw new NotFoundException("category", id);
-        }
     }
 
     private void checkCategoryEventsExistsBy(long id) {
@@ -70,7 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto updateCategory(long catId, UpdateCategoryDto body) {
         log.trace("Инициировано сохранение категории с id={}. Тело запроса: {}", catId, body);
-        Category category = findCategoryBy(catId);
+        Category category = findEntityIn(categoryRepository, catId);
         log.trace("Категория найдена: {}", category);
         if (category.getName().equals(body.getName())) {
             log.trace("Имя категории не изменилось");
@@ -97,14 +89,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto getCategory(long catId) {
         log.trace("Инициировано получение категории с id={}", catId);
-        Category result = findCategoryBy(catId);
+        Category result = findEntityIn(categoryRepository, catId);
         log.debug("Найдена категория {}", result);
         return CategoryMapper.toCategoryDto(result);
-    }
-
-    @Override
-    public Category findCategoryBy(long id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("category", id));
     }
 }

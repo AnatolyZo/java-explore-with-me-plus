@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Entity
 @Table(name = "requests", schema = "public")
 public class Request {
@@ -28,6 +29,5 @@ public class Request {
     private long requesterId;
 
     @Enumerated(EnumType.STRING)
-    @Setter
     private RequestStatus status;
 }

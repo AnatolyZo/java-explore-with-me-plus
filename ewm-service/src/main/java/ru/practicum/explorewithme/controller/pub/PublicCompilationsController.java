@@ -7,22 +7,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.controller.admin.AdminCompilationsController;
 import ru.practicum.explorewithme.dto.CompilationDto;
 import ru.practicum.explorewithme.service.CompilationsService;
 
 import java.util.List;
 
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
+
 @RestController
-@RequestMapping(path = PublicCompilationsController.URL_BASE)
+@RequestMapping(path = URL_COMPILATIONS)
 @RequiredArgsConstructor
 @Validated
 @SuppressWarnings("unused")
 public class PublicCompilationsController {
-    public static final String URL_BASE = "/compilations";
-    public static final String PARAM_PINNED = "pinned";
-    public static final String PARAM_FROM = "from";
-    public static final String PARAM_SIZE = "size";
 
     private final CompilationsService compilationsService;
 
@@ -38,11 +35,8 @@ public class PublicCompilationsController {
                 .body(compilationsService.getCompilations(pinned, from, size));
     }
 
-    @GetMapping("/{" + AdminCompilationsController.ID_COMPILATION + "}")
-    public ResponseEntity<CompilationDto> getCompilation(
-            @PathVariable(name = AdminCompilationsController.ID_COMPILATION)
-            long compId
-    ) {
+    @GetMapping("/{" + ID_COMPILATION + "}")
+    public ResponseEntity<CompilationDto> getCompilation(@PathVariable(name = ID_COMPILATION) long compId) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(compilationsService.getCompilation(compId));
     }

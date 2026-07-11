@@ -15,8 +15,11 @@ import ru.practicum.explorewithme.test.ControllerTest;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static ru.practicum.explorewithme.controller.ControllerConstants.ACCESS_ADMIN;
+import static ru.practicum.explorewithme.controller.ControllerConstants.URL_COMPILATIONS;
 
 public class AdminCompilationsControllerTest extends ControllerTest {
+    private static final String URL_BASE = ACCESS_ADMIN + URL_COMPILATIONS;
     @InjectMocks
     private AdminCompilationsController adminCompilationsController;
     @Mock
@@ -35,7 +38,7 @@ public class AdminCompilationsControllerTest extends ControllerTest {
         NewCompilationDto body = buildNewCompilationDto(List.of());
 
         // Act
-        ResultActions result = performPost(AdminCompilationsController.URL_BASE, body);
+        ResultActions result = performPost(URL_BASE, body);
 
         // Assert
         expectStatusCreated(result);
@@ -49,7 +52,7 @@ public class AdminCompilationsControllerTest extends ControllerTest {
         long compId = 1L;
 
         // Act
-        ResultActions result = performDelete(createIdUrl(AdminCompilationsController.URL_BASE, compId));
+        ResultActions result = performDelete(createIdUrl(URL_BASE, compId));
 
         // Assert
         expectStatusNoContent(result);
@@ -64,7 +67,7 @@ public class AdminCompilationsControllerTest extends ControllerTest {
         UpdateCompilationRequest body = buildUpdateCompilationRequest(List.of());
 
         // Act
-        ResultActions result = performPatch(createIdUrl(AdminCompilationsController.URL_BASE, compId), body);
+        ResultActions result = performPatch(createIdUrl(URL_BASE, compId), body);
 
         // Assert
         expectStatusOk(result);
