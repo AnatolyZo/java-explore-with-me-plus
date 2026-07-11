@@ -108,7 +108,6 @@ public class PrivateEventControllerTests {
                 .build();
 
         responseRequest = RequestDto.builder()
-                .eventId(1L)
                 .build();
 
         responseStatuses = ChangedRequestStatusesDto.builder()

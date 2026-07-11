@@ -75,7 +75,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         //Формируем событие и сохраняем
         Event event = EventMapper.toEvent(newEventDto);
         setNestedClassesValues(event, category, initiator, locationEmbeddable);
-        setParamsOnCreation(event);
+        setParamsOnCreation(event, newEventDto);
 
         Event createdEvent = eventRepository.save(event);
 
@@ -117,8 +117,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     @Override
     @Transactional
     public ChangedRequestStatusesDto updateRequestStatuses(long userId, long eventId, UpdateRequestStatusDto update) {
-        Event event = getEventById(userId, eventId);
-
+        Event event = getEventById(eventId, userId);
         //Обработка ситуации, когда не установлено ограничение по количеству участников
         //или запрос не требует модерации
         if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
@@ -129,7 +128,6 @@ public class EventServiceImpl extends ServiceBase implements EventService {
                     .rejectedRequests(List.of())
                     .build();
         }
-
         int requestsAvailableToConfirm = event.getParticipantLimit() - event.getConfirmedRequests();
 
         if (requestsAvailableToConfirm == 0) {
@@ -149,17 +147,15 @@ public class EventServiceImpl extends ServiceBase implements EventService {
 
             List<RequestDto> confirmedRequests = requestService.changeRequestStatuses(requestsToConfirm, RequestStatus.CONFIRMED);
             List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(requestsToReject, RequestStatus.REJECTED);
-
             //Обновляем количество свободных мест
             event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests.size());
             eventRepository.save(event);
-
+            System.out.println();
             return ChangedRequestStatusesDto.builder()
                     .confirmedRequests(confirmedRequests)
                     .rejectedRequests(rejectedRequests)
                     .build();
         }
-
         //Обработка случая отклонения запросов
         List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(update.getRequestIds(), RequestStatus.REJECTED);
 
@@ -343,10 +339,10 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         }
     }
 
-    private void setParamsOnCreation(Event event) {
+    private void setParamsOnCreation(Event event, NewEventDto newEventDto) {
         event.setCreatedOn(LocalDateTime.now());
         event.setStatus(EventStatus.PENDING);
-        event.setRequestModeration(true);
+        event.setRequestModeration(newEventDto.getRequestModerationOrDefault());
     }
 
     private void checkEventNotCanceled(Event event) {

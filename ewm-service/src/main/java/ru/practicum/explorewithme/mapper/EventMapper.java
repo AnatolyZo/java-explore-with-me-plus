@@ -13,7 +13,6 @@ public class EventMapper {
                 .eventDate(newEventDto.getEventDate())
                 .paid(newEventDto.isPaid())
                 .participantLimit(newEventDto.getParticipantLimit())
-                .requestModeration(newEventDto.isRequestModeration())
                 .title(newEventDto.getTitle())
                 .build();
     }

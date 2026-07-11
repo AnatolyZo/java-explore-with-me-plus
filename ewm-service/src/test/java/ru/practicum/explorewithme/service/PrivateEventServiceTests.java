@@ -567,8 +567,6 @@ class PrivateEventServiceTests {
         return RequestDto.builder()
                 .id(requestId)
                 .created(LocalDateTime.now())
-                .eventId(eventId)
-                .requesterId(requesterId)
                 .status(status)
                 .build();
     }

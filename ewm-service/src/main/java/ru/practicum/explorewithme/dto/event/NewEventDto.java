@@ -38,9 +38,13 @@ public class NewEventDto {
     @Builder.Default
     private int participantLimit = 0;
 
-    private boolean requestModeration;
+    private Boolean requestModeration;
 
     @NotBlank(message = "'title' field cannot be empty.")
     @Size(min = 3, max = 120, message = "Title must be between 3 and 120 characters")
     private String title;
+
+    public boolean getRequestModerationOrDefault() {
+        return this.requestModeration == null ? true : this.requestModeration;
+    }
 }
