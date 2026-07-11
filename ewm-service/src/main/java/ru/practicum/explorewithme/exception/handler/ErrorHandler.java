@@ -1,13 +1,13 @@
 package ru.practicum.explorewithme.exception.handler;
 
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import jakarta.validation.ConstraintViolationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.practicum.explorewithme.exception.*;
 
 import java.time.LocalDateTime;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class ErrorHandler {
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) throws NoSuchMethodException {
+    public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getFieldError();
         if (fieldError == null) {
             return createErrorResponse("incorrect field value", "", HttpStatus.BAD_REQUEST);
@@ -55,7 +55,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> notFound(NotFoundException e) {
+    public ResponseEntity<ApiError> notFound(IdNotFoundException e) {
         return createErrorResponse("required object was not found", e.getMessage(), HttpStatus.NOT_FOUND);
     }
 

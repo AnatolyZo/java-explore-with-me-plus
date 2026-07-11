@@ -3,7 +3,6 @@ package ru.practicum.explorewithme.service;
 import ru.practicum.explorewithme.dto.CategoryDto;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
-import ru.practicum.explorewithme.entity.Category;
 
 import java.util.List;
 
@@ -17,6 +16,4 @@ public interface CategoryService {
     List<CategoryDto> getCategories(int from, int size);
 
     CategoryDto getCategory(long catId);
-
-    Category findCategoryBy(long id);
 }

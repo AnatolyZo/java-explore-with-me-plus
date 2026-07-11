@@ -5,14 +5,18 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.dto.*;
 import ru.practicum.explorewithme.entity.*;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
+import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.mapper.CompilationMapper;
+import ru.practicum.explorewithme.mapper.UserMapper;
 import ru.practicum.explorewithme.repository.CompilationRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.test.ServiceTest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class CompilationsServiceImplTest extends ServiceTest {
@@ -22,6 +26,8 @@ public class CompilationsServiceImplTest extends ServiceTest {
     private CompilationRepository compilationRepository;
     @Mock
     private EventRepository eventRepository;
+    @Mock
+    private StatsClient statsClient;
 
     @Test
     public void createCompilation_ReturnsObject() {
@@ -33,6 +39,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         List<Event> events = createEvents(body.getEvents());
         whenEventsFound(events);
         whenSaveReturns(compilationRepository, saved);
+        whenClientDoNothing(statsClient);
 
         // Act
         CompilationDto actual = compilationService.createCompilation(body);
@@ -82,7 +89,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> compilationService.deleteCompilation(absentId));
 
         // Assert
-        assertException(thrown, NotFoundException.class);
+        assertException(thrown, IdNotFoundException.class);
     }
 
     @Test
@@ -97,6 +104,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         whenEntityFoundIn(compilationRepository, saved);
         whenEventsFound(events);
         whenSaveReturns(compilationRepository, update);
+        whenClientDoNothing(statsClient);
 
         // Act
         CompilationDto actual = compilationService.updateCompilation(savedId, body);
@@ -177,7 +185,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> compilationService.updateCompilation(absentId, body));
 
         // Assert
-        assertException(thrown, NotFoundException.class);
+        assertException(thrown, IdNotFoundException.class);
     }
 
     @Test
@@ -227,7 +235,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> compilationService.getCompilation(absentId));
 
         // Assert
-        assertException(thrown, NotFoundException.class);
+        assertException(thrown, IdNotFoundException.class);
     }
 
     private List<Event> createEvents(List<Long> eventIds) {
@@ -250,11 +258,16 @@ public class CompilationsServiceImplTest extends ServiceTest {
         return CompilationDto.builder()
                 .events(
                         compilation.getEvents().stream()
-                                .map(compilationEvent -> EventDto.builder()
-                                        .id(compilationEvent.getEvent().getId())
-                                        .initiator(UserShortDto.builder().build())
-                                        .location(new Location(0d, 0d))
-                                        .build())
+                                .map(compilationEvent -> {
+                                    Event event = compilationEvent.getEvent();
+                                    return EventDto.builder()
+                                            .id(event.getId())
+                                            .createdOn(LocalDateTime.MIN)
+                                            .initiator(UserMapper.toUserShortDto(event.getInitiator()))
+                                            .location(new Location(0d, 0d))
+                                            .category(CategoryMapper.toCategoryDto(event.getCategory()))
+                                            .build();
+                                })
                                 .toList()
                 )
                 .id(compilation.getId())
@@ -331,6 +344,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         return Event.builder()
                 .id(id)
                 .category(Category.builder().build())
+                .createdOn(LocalDateTime.MIN)
                 .initiator(User.builder().build())
                 .location(new LocationEmbeddable(0d, 0d))
                 .build();

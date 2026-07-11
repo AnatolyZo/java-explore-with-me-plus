@@ -31,6 +31,5 @@ public class Request {
     private User requester;
 
     @Enumerated(EnumType.STRING)
-    @Setter
     private RequestStatus status;
 }

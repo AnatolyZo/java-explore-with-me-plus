@@ -8,13 +8,17 @@ import org.mockito.Mockito;
 import org.springframework.test.web.servlet.ResultActions;
 import ru.practicum.explorewithme.dto.NewCategoryDto;
 import ru.practicum.explorewithme.dto.UpdateCategoryDto;
+import ru.practicum.explorewithme.exception.handler.ErrorHandler;
 import ru.practicum.explorewithme.service.CategoryService;
 import ru.practicum.explorewithme.test.ControllerTest;
-import ru.practicum.explorewithme.exception.handler.ErrorHandler;
 
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static ru.practicum.explorewithme.controller.ControllerConstants.ACCESS_ADMIN;
+import static ru.practicum.explorewithme.controller.ControllerConstants.URL_CATEGORIES;
 
 public class AdminCategoryControllerTest extends ControllerTest {
+    private static final String URL_BASE = ACCESS_ADMIN + URL_CATEGORIES;
+
     @InjectMocks
     private AdminCategoryController adminCategoryController;
     @Mock
@@ -33,7 +37,7 @@ public class AdminCategoryControllerTest extends ControllerTest {
         NewCategoryDto body = buildNewCategoryDto();
 
         // Act
-        ResultActions result = performPost(AdminCategoryController.URL_BASE, body);
+        ResultActions result = performPost(URL_BASE, body);
 
         // Assert
         expectStatusCreated(result);
@@ -47,7 +51,7 @@ public class AdminCategoryControllerTest extends ControllerTest {
         long catId = 1L;
 
         // Act
-        ResultActions result = performDelete(createIdUrl(AdminCategoryController.URL_BASE, catId));
+        ResultActions result = performDelete(createIdUrl(URL_BASE, catId));
 
         // Assert
         expectStatusNoContent(result);
@@ -62,7 +66,7 @@ public class AdminCategoryControllerTest extends ControllerTest {
         NewCategoryDto body = buildNewCategoryDto();
 
         // Act
-        ResultActions result = performPatch(createIdUrl(AdminCategoryController.URL_BASE, catId), body);
+        ResultActions result = performPatch(createIdUrl(URL_BASE, catId), body);
 
         // Assert
         expectStatusOk(result);
