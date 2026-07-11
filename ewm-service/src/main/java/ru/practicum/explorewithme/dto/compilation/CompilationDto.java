@@ -1,9 +1,10 @@
-package ru.practicum.explorewithme.dto;
+package ru.practicum.explorewithme.dto.compilation;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import ru.practicum.explorewithme.dto.event.EventDto;
 
 import java.util.ArrayList;
 import java.util.List;

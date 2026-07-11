@@ -9,7 +9,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.explorewithme.controller.priv.PrivateEventController;
-import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.dto.category.CategoryDto;
+import ru.practicum.explorewithme.dto.event.*;
+import ru.practicum.explorewithme.dto.request.ChangedRequestStatusesDto;
+import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.UpdateRequestStatusDto;
+import ru.practicum.explorewithme.dto.user.UserShortDto;
 import ru.practicum.explorewithme.service.EventService;
 
 import java.time.LocalDateTime;
@@ -36,7 +41,7 @@ public class PrivateEventControllerTests {
     private EventService eventService;
 
     private NewEventDto postRequest;
-    private UpdateEventDto updateRequest;
+    private UserUpdateEventDto updateRequest;
     private EventDto response;
     private UpdateRequestStatusDto update;
     private RequestDto responseRequest;
@@ -68,7 +73,7 @@ public class PrivateEventControllerTests {
                 .title("TitleTitleTitleTitleTitle")
                 .build();
 
-        updateRequest = UpdateEventDto.builder()
+        updateRequest = UserUpdateEventDto.builder()
                 .annotation("AnnotationAnnotationAnnotationAnnotation")
                 .category(1L)
                 .description("DescriptionDescriptionDescriptionDescription")
@@ -77,7 +82,7 @@ public class PrivateEventControllerTests {
                 .paid(true)
                 .participantLimit(10)
                 .requestModeration(true)
-                .status(EventUpdateAction.SEND_TO_REVIEW)
+                .status(UserEventUpdateAction.SEND_TO_REVIEW)
                 .title("TitleTitleTitleTitleTitle")
                 .build();
 

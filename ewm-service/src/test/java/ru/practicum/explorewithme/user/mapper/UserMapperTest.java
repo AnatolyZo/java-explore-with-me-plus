@@ -2,9 +2,9 @@ package ru.practicum.explorewithme.user.mapper;
 
 import org.junit.jupiter.api.Test;
 import ru.practicum.explorewithme.mapper.UserMapper;
-import ru.practicum.explorewithme.dto.NewUserRequest;
-import ru.practicum.explorewithme.dto.UserDto;
-import ru.practicum.explorewithme.dto.UserShortDto;
+import ru.practicum.explorewithme.dto.user.NewUserRequest;
+import ru.practicum.explorewithme.dto.user.UserDto;
+import ru.practicum.explorewithme.dto.user.UserShortDto;
 import ru.practicum.explorewithme.entity.User;
 
 import static org.junit.jupiter.api.Assertions.assertAll;

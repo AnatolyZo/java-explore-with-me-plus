@@ -1,7 +1,7 @@
 package ru.practicum.explorewithme.service;
 
-import ru.practicum.explorewithme.dto.RequestDto;
-import ru.practicum.explorewithme.dto.RequestStatus;
+import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.RequestStatus;
 
 import java.util.List;
 

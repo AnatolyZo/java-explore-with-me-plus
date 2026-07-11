@@ -3,10 +3,10 @@ package ru.practicum.explorewithme.test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.practicum.explorewithme.dto.NewCategoryDto;
-import ru.practicum.explorewithme.dto.NewCompilationDto;
-import ru.practicum.explorewithme.dto.UpdateCategoryDto;
-import ru.practicum.explorewithme.dto.UpdateCompilationRequest;
+import ru.practicum.explorewithme.dto.category.NewCategoryDto;
+import ru.practicum.explorewithme.dto.compilation.NewCompilationDto;
+import ru.practicum.explorewithme.dto.category.UpdateCategoryDto;
+import ru.practicum.explorewithme.dto.compilation.UpdateCompilationRequest;
 
 import java.util.List;
 import java.util.function.Consumer;

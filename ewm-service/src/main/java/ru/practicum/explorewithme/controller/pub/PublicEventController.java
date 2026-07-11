@@ -9,9 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.EventShortDto;
-import ru.practicum.explorewithme.dto.PublicEventSort;
+import ru.practicum.explorewithme.dto.event.EventDto;
+import ru.practicum.explorewithme.dto.event.EventShortDto;
+import ru.practicum.explorewithme.dto.event.PublicEventSort;
 import ru.practicum.explorewithme.service.EventService;
 
 import java.time.LocalDateTime;

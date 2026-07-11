@@ -10,23 +10,31 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.ExploreWithMeMainService;
 import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
-import ru.practicum.explorewithme.dto.*;
+import ru.practicum.explorewithme.dto.category.CategoryDto;
+import ru.practicum.explorewithme.dto.event.*;
+import ru.practicum.explorewithme.dto.request.ChangedRequestStatusesDto;
+import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.RequestStatus;
+import ru.practicum.explorewithme.dto.request.UpdateRequestStatusDto;
+import ru.practicum.explorewithme.dto.user.UserShortDto;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.BadRequestException;
+import ru.practicum.explorewithme.exception.WrongDateIntervalException;
 import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.hit.EndpointHitRequest;
+import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.mapper.EventMapper;
 import ru.practicum.explorewithme.mapper.LocationMapper;
+import ru.practicum.explorewithme.mapper.UserMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
-import ru.practicum.explorewithme.repository.EventSearchSpecification;
+import ru.practicum.explorewithme.repository.specification.AdminEventSearchSpecification;
 import ru.practicum.explorewithme.repository.UserRepository;
-import ru.practicum.explorewithme.repository.specification.EventSpecifications;
+import ru.practicum.explorewithme.repository.specification.UsersEventSearchSpecifications;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -42,81 +50,67 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     private final UserRepository userRepository;
     private final RequestService requestService;
     private final StatsClient statsClient;
+    private static final int USERS_MIN_HOURS_OFFSET = 2;
+    private static final int ADMINS_MIN_HOURS_OFFSET = 1;
 
     @Override
     public List<EventDto> getEvents(long userId, int from, int size) {
         Pageable pageable = new OffsetPageRequest(from, size);
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable);
-        Map<String, Long> viewsByUri = getStats(statsClient, events);
-        return getEventsWithStats(events, viewsByUri);
+
+        if (events.isEmpty()) {
+            return List.of();
+        }
+
+        return getEventsWithStats(events, statsClient);
     }
 
     @Override
     @Transactional
     public EventDto createEvent(long userId, NewEventDto newEventDto) {
-        int usersMinOffset = 2;
-        checkTimeBeforeEventStart(newEventDto.getEventDate(), usersMinOffset);
+        checkTimeBeforeEventStart(newEventDto.getEventDate(), USERS_MIN_HOURS_OFFSET);
         Category category = findEntityIn(categoryRepository, newEventDto.getCategory());
         User initiator = findEntityIn(userRepository, userId);
-        Location location = newEventDto.getLocation();
-        LocationEmbeddable locationEmbeddable = LocationMapper.mapToLocationEmbeddable(location.lat(), location.lon());
-
+        LocationEmbeddable locationEmbeddable = LocationMapper.toLocationEmbeddable(newEventDto.getLocation());
         //Формируем событие и сохраняем
-        Event event = EventMapper.mapToEvent(newEventDto, category, initiator, locationEmbeddable);
-        event.setCreatedOn(LocalDateTime.now());
-        event.setStatus(EventStatus.PENDING);
-        event.setRequestModeration(true);
+        Event event = EventMapper.toEvent(newEventDto);
+        setNestedClassesValues(event, category, initiator, locationEmbeddable);
+        setParamsOnCreation(event);
 
         Event createdEvent = eventRepository.save(event);
-        return EventMapper.mapToEventDto(createdEvent, 0);
+
+        EventDto result = EventMapper.toEventDto(createdEvent);
+        CategoryDto categoryDto = CategoryMapper.toCategoryDto(createdEvent.getCategory());
+        UserShortDto userShortDto = UserMapper.toUserShortDto(createdEvent.getInitiator());
+        Location location = LocationMapper.toLocation(createdEvent.getLocation());
+        setNestedClassesValues(result, categoryDto, userShortDto, location);
+        return result;
     }
 
     @Override
     public EventDto getEvent(long userId, long eventId) {
         Event event = getEventById(eventId, userId);
-
-        Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
-
-        return EventMapper.mapToEventDto(event, getViews(event, viewsByUri));
+        return getEventsWithStats(List.of(event), statsClient).getFirst();
     }
 
     @Override
     @Transactional
-    public EventDto updateEvent(long userId, long eventId, UpdateEventDto body) {
-        if (body.getEventDate() != null) {
-            int usersMinOffset = 2;
-            checkTimeBeforeEventStart(body.getEventDate(), usersMinOffset);
+    public EventDto updateEvent(long userId, long eventId, UserUpdateEventDto update) {
+        if (update.getEventDate() != null) {
+            checkTimeBeforeEventStart(update.getEventDate(), USERS_MIN_HOURS_OFFSET);
         }
 
         Event event = getEventById(eventId, userId);
-
-        //Проверяем, что событие отменено или ожидает модерации
-        if (!event.getStatus().equals(EventStatus.CANCELED) && !event.getStatus().equals(EventStatus.PENDING)) {
-            throw new UnavailableUpdateException("Event", eventId);
-        }
-
-        EventStatus status;
-
-        //Проверяем хочет ли пользователь отменить событие
-        if (body.getStatus() != null && body.getStatus().equals(EventUpdateAction.CANCEL_REVIEW)) {
-            status = EventStatus.CANCELED;
-        } else {
-            status = EventStatus.PENDING;
-        }
-
-        updateEventFields(event, body, status);
-
+        checkEventNotCanceled(event);
+        EventStatus status = changeEventStatus(update);
+        updateEventFields(event, update, status);
         Event updatedEvent = eventRepository.save(event);
-
-        Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
-
-        return EventMapper.mapToEventDto(updatedEvent, getViews(event, viewsByUri));
+        return getEventsWithStats(List.of(updatedEvent), statsClient).getFirst();
     }
 
     @Override
     public List<RequestDto> getRequests(long userId, long eventId) {
         checkEventExistence(userId, eventId);
-
         return requestService.getRequestsToUsersEvent(eventId);
     }
 
@@ -130,14 +124,12 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
             List<Long> requestIds = update.getRequestIds();
             List<RequestDto> confirmedRequests = requestService.getRequestsByIds(requestIds);
-
             return ChangedRequestStatusesDto.builder()
                     .confirmedRequests(confirmedRequests)
                     .rejectedRequests(List.of())
                     .build();
         }
 
-        //Вычисление свободных мест для посещения события
         int requestsAvailableToConfirm = event.getParticipantLimit() - event.getConfirmedRequests();
 
         if (requestsAvailableToConfirm == 0) {
@@ -198,13 +190,13 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         }
 
         Specification<Event> specification = Specification.<Event>unrestricted()
-                .and(EventSpecifications.hasStatus(EventStatus.PUBLISHED))
-                .and(EventSpecifications.textContains(text))
-                .and(EventSpecifications.categoryIn(categories))
-                .and(EventSpecifications.paidEquals(paid))
-                .and(EventSpecifications.eventDateFrom(start))
-                .and(EventSpecifications.eventDateTo(rangeEnd))
-                .and(EventSpecifications.onlyAvailable(onlyAvailable));
+                .and(UsersEventSearchSpecifications.hasStatus(EventStatus.PUBLISHED))
+                .and(UsersEventSearchSpecifications.textContains(text))
+                .and(UsersEventSearchSpecifications.categoryIn(categories))
+                .and(UsersEventSearchSpecifications.paidEquals(paid))
+                .and(UsersEventSearchSpecifications.eventDateFrom(start))
+                .and(UsersEventSearchSpecifications.eventDateTo(rangeEnd))
+                .and(UsersEventSearchSpecifications.onlyAvailable(onlyAvailable));
 
         Sort eventsSort = sort == PublicEventSort.EVENT_DATE ? Sort.by("eventDate").ascending() : Sort.unsorted();
         List<Event> events = eventRepository.findAll(specification, eventsSort);
@@ -213,10 +205,9 @@ public class EventServiceImpl extends ServiceBase implements EventService {
             return List.of();
         }
 
-        Map<String, Long> viewsByUri = getStats(statsClient, events);
-
-        List<EventShortDto> dtos = events.stream()
-                .map(event -> EventMapper.mapToEventShortDto(event, getViews(event, viewsByUri)))
+        List<EventDto> eventsDto = getEventsWithStats(events, statsClient);
+        List<EventShortDto> dtos = eventsDto.stream()
+                .map(EventMapper::toEventShortDto)
                 .toList();
 
         if (sort == PublicEventSort.VIEWS) {
@@ -234,8 +225,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
                 .orElseThrow(() -> new IdNotFoundException(eventId));
         Map<String, Long> viewsByUri = getStats(statsClient, List.of(event));
-
-        return EventMapper.mapToEventDto(event, getViews(event, viewsByUri));
+        return getEventsWithStats(List.of(event), statsClient).getFirst();
     }
 
     @Override
@@ -252,7 +242,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
                                        String rangeEnd,
                                        int from,
                                        int size) {
-        Specification<Event> spec = new EventSearchSpecification(users, states, categories, rangeStart, rangeEnd);
+        Specification<Event> spec = new AdminEventSearchSpecification(users, states, categories, rangeStart, rangeEnd);
         Pageable pageable = new OffsetPageRequest(from, size);
         Page<Event> eventPage = eventRepository.findAll(spec, pageable);
         List<Event> events = eventPage.getContent();
@@ -261,43 +251,22 @@ public class EventServiceImpl extends ServiceBase implements EventService {
             return List.of();
         }
 
-        //Получаем статистику
-        Map<String, Long> viewsByUri = getStats(statsClient, events);
-        return getEventsWithStats(events, viewsByUri);
+        return getEventsWithStats(events, statsClient);
     }
 
     @Override
     @Transactional
-    public EventDto updateEventByAdmin(long eventId, UpdateEventDto body) {
-        if (body.getEventDate() != null) {
-            int adminsMinOffset = 1;
-            checkTimeBeforeEventStart(body.getEventDate(), adminsMinOffset);
+    public EventDto updateEvent(long eventId, AdminUpdateEventDto update) {
+        if (update.getEventDate() != null) {
+            checkTimeBeforeEventStart(update.getEventDate(), ADMINS_MIN_HOURS_OFFSET);
         }
 
         Event event = findEntityIn(eventRepository, eventId);
-
-
-        if (!event.getStatus().equals(EventStatus.PENDING)) {
-            throw new UnavailableUpdateException("Event", eventId);
-        }
-
-        EventStatus status;
-
-        if (body.getStatus() != null && body.getStatus().equals(EventUpdateAction.PUBLISH_EVENT)) {
-            status = EventStatus.PUBLISHED;
-        } else if (body.getStatus() != null && body.getStatus().equals(EventUpdateAction.REJECT_EVENT)) {
-            status = EventStatus.CANCELED;
-        } else {
-            status = event.getStatus();
-        }
-
-        updateEventFields(event, body, status);
-
+        checkEventNotPublished(event);
+        EventStatus status = changeEventStatus(event, update);
+        updateEventFields(event, update, status);
         Event updatedEvent = eventRepository.save(event);
-
-        Map<String, Long> viewsByUri = getStats(statsClient, List.of(updatedEvent));
-
-        return EventMapper.mapToEventDto(updatedEvent, getViews(updatedEvent, viewsByUri));
+        return getEventsWithStats(List.of(updatedEvent), statsClient).getFirst();
     }
 
     private <T> List<T> getPage(List<T> source, int from, int size) {
@@ -320,11 +289,11 @@ public class EventServiceImpl extends ServiceBase implements EventService {
 
     private void checkDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd) {
         if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
-            throw new BadRequestException("rangeStart must be before rangeEnd");
+            throw new WrongDateIntervalException("rangeStart must be before rangeEnd");
         }
     }
 
-    private void updateEventFields(Event event, UpdateEventDto update, EventStatus status) {
+    private void updateEventFields(Event event, EventUpdateCommon update, EventStatus status) {
         if (update.getAnnotation() != null && !update.getAnnotation().isEmpty()) {
             event.setAnnotation(update.getAnnotation());
         }
@@ -335,7 +304,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
             event.setEventDate(update.getEventDate());
         }
         if (update.getLocation() != null) {
-            LocationEmbeddable location = LocationMapper.mapToLocationEmbeddable(update.getLocation().lat(), update.getLocation().lon());
+            LocationEmbeddable location = LocationMapper.toLocationEmbeddable(update.getLocation());
             event.setLocation(location);
         }
 
@@ -370,7 +339,51 @@ public class EventServiceImpl extends ServiceBase implements EventService {
 
     private void checkTimeBeforeEventStart(LocalDateTime eventDate, int minOffset) {
         if (!eventDate.isAfter(LocalDateTime.now().plusHours(minOffset))) {
-            throw new EarlyDateException(eventDate);
+            throw new EarlyDateException(minOffset, eventDate);
         }
+    }
+
+    private void setParamsOnCreation(Event event) {
+        event.setCreatedOn(LocalDateTime.now());
+        event.setStatus(EventStatus.PENDING);
+        event.setRequestModeration(true);
+    }
+
+    private void checkEventNotCanceled(Event event) {
+        if (!event.getStatus().equals(EventStatus.CANCELED) && !event.getStatus().equals(EventStatus.PENDING)) {
+            throw new UnavailableUpdateException("Event", event.getId());
+        }
+    }
+
+    private void checkEventNotPublished(Event event) {
+        if (!event.getStatus().equals(EventStatus.PENDING)) {
+            throw new UnavailableUpdateException("Event", event.getId());
+        }
+    }
+
+    private EventStatus changeEventStatus(UserUpdateEventDto update) {
+        EventStatus status;
+
+        if (update.getStatus() != null && update.getStatus().equals(UserEventUpdateAction.CANCEL_REVIEW)) {
+            status = EventStatus.CANCELED;
+        } else {
+            status = EventStatus.PENDING;
+        }
+
+        return status;
+    }
+
+    private EventStatus changeEventStatus(Event event, AdminUpdateEventDto update) {
+        EventStatus status;
+
+        if (update.getStatus() != null && update.getStatus().equals(AdminEventUpdateAction.PUBLISH_EVENT)) {
+            status = EventStatus.PUBLISHED;
+        } else if (update.getStatus() != null && update.getStatus().equals(AdminEventUpdateAction.REJECT_EVENT)) {
+            status = EventStatus.CANCELED;
+        } else {
+            status = event.getStatus();
+        }
+
+        return status;
     }
 }

@@ -2,7 +2,7 @@ package ru.practicum.explorewithme.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import ru.practicum.explorewithme.dto.EventStatus;
+import ru.practicum.explorewithme.dto.event.EventStatus;
 
 import java.time.LocalDateTime;
 
@@ -65,7 +65,4 @@ public class Event {
 
     @Column(name = "title", nullable = false)
     private String title;
-
-    @Transient
-    private long views;
 }

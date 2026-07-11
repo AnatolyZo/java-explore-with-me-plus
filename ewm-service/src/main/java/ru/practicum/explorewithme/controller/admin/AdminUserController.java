@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.dto.NewUserRequest;
-import ru.practicum.explorewithme.dto.UserDto;
+import ru.practicum.explorewithme.dto.user.NewUserRequest;
+import ru.practicum.explorewithme.dto.user.UserDto;
 import ru.practicum.explorewithme.service.UserService;
 
 import java.util.List;

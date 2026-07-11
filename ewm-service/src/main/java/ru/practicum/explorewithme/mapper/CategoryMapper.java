@@ -1,8 +1,8 @@
 package ru.practicum.explorewithme.mapper;
 
-import ru.practicum.explorewithme.dto.CategoryDto;
-import ru.practicum.explorewithme.dto.NewCategoryDto;
-import ru.practicum.explorewithme.dto.UpdateCategoryDto;
+import ru.practicum.explorewithme.dto.category.CategoryDto;
+import ru.practicum.explorewithme.dto.category.NewCategoryDto;
+import ru.practicum.explorewithme.dto.category.UpdateCategoryDto;
 import ru.practicum.explorewithme.entity.Category;
 
 public class CategoryMapper {

@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.dto.EventDto;
-import ru.practicum.explorewithme.dto.UpdateEventDto;
+import ru.practicum.explorewithme.dto.event.AdminUpdateEventDto;
+import ru.practicum.explorewithme.dto.event.EventDto;
 import ru.practicum.explorewithme.service.EventService;
 
 import java.util.List;
@@ -37,9 +37,9 @@ public class AdminEventController {
     @PatchMapping("/{" + ID_EVENT + "}")
     public ResponseEntity<EventDto> updateEvent(
             @PathVariable(name = ID_EVENT) long eventId,
-            @Valid @RequestBody UpdateEventDto updateEventDto
+            @Valid @RequestBody AdminUpdateEventDto adminUpdateEventDto
     ) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(eventService.updateEventByAdmin(eventId, updateEventDto));
+                .body(eventService.updateEvent(eventId, adminUpdateEventDto));
     }
 }

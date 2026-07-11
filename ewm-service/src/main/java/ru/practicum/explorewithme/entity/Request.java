@@ -2,7 +2,7 @@ package ru.practicum.explorewithme.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import ru.practicum.explorewithme.dto.RequestStatus;
+import ru.practicum.explorewithme.dto.request.RequestStatus;
 
 import java.time.LocalDateTime;
 

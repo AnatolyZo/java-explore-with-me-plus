@@ -1,4 +1,4 @@
-package ru.practicum.explorewithme.repository;
+package ru.practicum.explorewithme.repository.specification;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -12,14 +12,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EventSearchSpecification implements Specification<Event> {
+public class AdminEventSearchSpecification implements Specification<Event> {
     private final List<Long> users;
     private final List<String> states;
     private final List<Long> categories;
     private final LocalDateTime rangeStart;
     private final LocalDateTime rangeEnd;
 
-    public EventSearchSpecification(List<Long> users, List<String> states, List<Long> categories, String rangeStart, String rangeEnd) {
+    public AdminEventSearchSpecification(List<Long> users, List<String> states, List<Long> categories, String rangeStart, String rangeEnd) {
         this.users = users;
         this.states = states;
         this.categories = categories;

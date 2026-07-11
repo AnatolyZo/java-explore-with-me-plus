@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.explorewithme.dto.CategoryDto;
+import ru.practicum.explorewithme.dto.category.CategoryDto;
 import ru.practicum.explorewithme.service.CategoryService;
 
 import java.util.List;

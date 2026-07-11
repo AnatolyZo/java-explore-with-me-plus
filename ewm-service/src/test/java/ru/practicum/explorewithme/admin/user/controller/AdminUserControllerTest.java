@@ -8,8 +8,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.explorewithme.controller.admin.AdminUserController;
-import ru.practicum.explorewithme.dto.NewUserRequest;
-import ru.practicum.explorewithme.dto.UserDto;
+import ru.practicum.explorewithme.dto.user.NewUserRequest;
+import ru.practicum.explorewithme.dto.user.UserDto;
 import ru.practicum.explorewithme.service.UserService;
 
 import java.util.List;
