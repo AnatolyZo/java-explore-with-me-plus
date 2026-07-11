@@ -11,7 +11,6 @@ import ru.practicum.explorewithme.entity.Request;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
-import ru.practicum.explorewithme.mapper.UserMapper;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.RequestRepository;
 import ru.practicum.explorewithme.repository.UserRepository;
@@ -36,7 +35,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                         .id(request.getId())
                         .created(request.getCreated())
                         .event(request.getEvent().getId())
-                        .requester(UserMapper.toUserShortDto(request.getRequester()))
+                        .requester(request.getRequester().getId())
                         .status(request.getStatus())
                         .build())
                 .toList();
@@ -63,7 +62,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                         .id(request.getId())
                         .created(request.getCreated())
                         .event(request.getEvent().getId())
-                        .requester(UserMapper.toUserShortDto(request.getRequester()))
+                        .requester(request.getRequester().getId())
                         .status(request.getStatus())
                         .build())
                 .toList();
@@ -77,7 +76,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                         .id(request.getId())
                         .created(request.getCreated())
                         .event(request.getEvent().getId())
-                        .requester(UserMapper.toUserShortDto(request.getRequester()))
+                        .requester(request.getRequester().getId())
                         .status(request.getStatus())
                         .build())
                 .toList();
@@ -110,7 +109,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                 .id(createdRequest.getId())
                 .created(createdRequest.getCreated())
                 .event(request.getEvent().getId())
-                .requester(UserMapper.toUserShortDto(createdRequest.getRequester()))
+                .requester(request.getRequester().getId())
                 .status(createdRequest.getStatus())
                 .build();
     }
@@ -132,7 +131,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                 .id(updatedRequest.getId())
                 .created(updatedRequest.getCreated())
                 .event(request.getEvent().getId())
-                .requester(UserMapper.toUserShortDto(updatedRequest.getRequester()))
+                .requester(request.getRequester().getId())
                 .status(updatedRequest.getStatus())
                 .build();
     }
@@ -146,7 +145,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                         .id(request.getId())
                         .created(request.getCreated())
                         .event(request.getEvent().getId())
-                        .requester(UserMapper.toUserShortDto(request.getRequester()))
+                        .requester(request.getRequester().getId())
                         .status(request.getStatus())
                         .build())
                 .toList();
