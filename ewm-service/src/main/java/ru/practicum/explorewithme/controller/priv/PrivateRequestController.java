@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.explorewithme.dto.EventDto;
 import ru.practicum.explorewithme.dto.ParticipationRequestDto;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.service.RequestService;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public class PrivateRequestController {
     @PostMapping
     public ResponseEntity<ParticipationRequestDto> addParticipationRequest(@PathVariable String userId, @RequestParam(name = "eventId") String eventId) {
         if (eventId == null || eventId.isBlank() || eventId.equals("0")) {
-            throw new NotFoundException("Event", 0);
+            throw new IdNotFoundException(0);
         }
 
         ParticipationRequestDto createdRequest = service.create(userId, eventId);

@@ -11,7 +11,7 @@ import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.Request;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
-import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.mapper.ParticipationRequestMapper;
 import ru.practicum.explorewithme.mapper.RequestMapper;
@@ -89,7 +89,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         Event event = eventRepository.findById(eventIdL)
-                .orElseThrow(() -> new NotFoundException("Event", eventIdL));
+                .orElseThrow(() -> new IdNotFoundException(eventIdL));
 
         if (event.getInitiator() != null && event.getInitiator().getId() == userIdL ) {
             throw new DuplicatedDataException("request", "eventId and userId", eventId);
@@ -106,7 +106,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         User requestor = userRepository.findById(userIdL)
-                .orElseThrow(() -> new NotFoundException("User", userIdL));
+                .orElseThrow(() -> new IdNotFoundException(userIdL));
 
         request.setCreated(now);
         request.setRequester(requestor);
@@ -130,7 +130,7 @@ public class RequestServiceImpl implements RequestService {
 
 
         Request request = requestRepository.findById(requestIdL)
-                .orElseThrow(() -> new NotFoundException("Request", requestIdL));
+                .orElseThrow(() -> new IdNotFoundException(requestIdL));
 
         if(request.getStatus().equals(RequestStatus.CONFIRMED)) {
             throw new DuplicatedDataException("request", "status", RequestStatus.CONFIRMED);
