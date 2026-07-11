@@ -116,7 +116,7 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
         List<Compilation> result = compilationRepository.findWithOffset(pinned, from, size);
         log.debug("Найдено {} подборок", result.size());
         return result.stream()
-                .map(CompilationMapper::toCompilationDto)
+                .map(this::composeComplicationResponse)
                 .toList();
     }
 
@@ -125,6 +125,6 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
         log.trace("Инициировано получение подборки с id={}", compId);
         Compilation result = findEntityIn(compilationRepository, compId);
         log.debug("Найдена подборка {}", result);
-        return CompilationMapper.toCompilationDto(result);
+        return composeComplicationResponse(result);
     }
 }
