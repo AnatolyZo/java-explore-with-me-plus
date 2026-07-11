@@ -21,6 +21,7 @@ import ru.practicum.explorewithme.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -91,7 +92,8 @@ public class RequestServiceImpl implements RequestService {
         Event event = eventRepository.findById(eventIdL)
                 .orElseThrow(() -> new IdNotFoundException(eventIdL));
 
-        if (event.getInitiator() != null && event.getInitiator().getId() == userIdL) {
+        if (event.getInitiator() != null
+                && Objects.equals(event.getInitiator().getId(), userIdL)) {
             throw new DuplicatedDataException("request", "eventId and userId", eventId);
         }
 
