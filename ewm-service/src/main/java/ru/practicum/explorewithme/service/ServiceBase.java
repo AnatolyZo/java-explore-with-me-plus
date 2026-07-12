@@ -1,5 +1,6 @@
 package ru.practicum.explorewithme.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,6 +27,7 @@ import java.util.Map;
 
 import static ru.practicum.explorewithme.controller.ControllerConstants.URL_EVENTS;
 
+@Slf4j
 public class ServiceBase {
     /// Убрал первый параметр из NFE чтобы не усложнять метод
     protected <E> E findEntityIn(JpaRepository<E, Long> repository, long id) {
@@ -66,6 +68,7 @@ public class ServiceBase {
             long views = getViews(eventDto, viewsByUri);
             eventDto.setViews(views);
         });
+        log.debug("К событиям {} добавлено количество просмотров", mappedEvents);
         return mappedEvents;
     }
 

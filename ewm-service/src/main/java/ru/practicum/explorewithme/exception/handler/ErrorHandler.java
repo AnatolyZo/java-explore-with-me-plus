@@ -70,12 +70,6 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> earlyDate(EarlyDateException e) {
-        return createErrorResponse("date is early", e.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-
-    @ExceptionHandler
     public ResponseEntity<ApiError> unexpected(RuntimeException e) {
         return createErrorResponse(
                 "unexpected error",

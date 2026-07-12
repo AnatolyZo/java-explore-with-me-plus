@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
+import ru.practicum.explorewithme.validation.DateIsNotEarly;
 
 import java.time.LocalDateTime;
 
@@ -25,6 +26,7 @@ public class AdminUpdateEventDto implements EventUpdateCommon {
     private String description;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateIsNotEarly(value = 1, message = "Время начала события должно начинаться не ранее, чем через один час")
     private LocalDateTime eventDate;
 
     private Location location;

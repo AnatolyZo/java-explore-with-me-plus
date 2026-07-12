@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
+import ru.practicum.explorewithme.validation.DateIsNotEarly;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +27,7 @@ public class NewEventDto {
 
     @NotNull(message = "'eventDate' field cannot be null.")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateIsNotEarly
     private LocalDateTime eventDate;
 
     @NotNull(message = "'location' field cannot be null.")

@@ -10,8 +10,6 @@ public interface RequestService {
 
     List<RequestDto> changeRequestStatuses(List<Long> requestIds, RequestStatus status);
 
-    List<RequestDto> getRequestsByIds(List<Long> requestIds);
-
     RequestDto create(long userId, long eventId);
 
     RequestDto cancelRequest(long userId, long requestId);

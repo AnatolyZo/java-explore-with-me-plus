@@ -1,6 +1,7 @@
 package ru.practicum.explorewithme.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.dto.event.EventStatus;
@@ -22,6 +23,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class RequestServiceImpl extends ServiceBase implements RequestService {
     private final RequestRepository requestRepository;
     private final EventRepository eventRepository;
@@ -29,7 +31,9 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
 
     @Override
     public List<RequestDto> getRequestsToUsersEvent(long eventId) {
+        log.trace("Инициировано получение запросов к событию с id {}", eventId);
         List<Request> requests = requestRepository.findByEventId(eventId);
+        log.debug("Получен список запросов {}", requests);
         return requests.stream()
                 .map(request -> RequestDto.builder()
                         .id(request.getId())
@@ -44,19 +48,19 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
     @Override
     @Transactional
     public List<RequestDto> changeRequestStatuses(List<Long> requestIds, RequestStatus status) {
+        log.trace("Инициировано изменение статусов на {} к списку запросов {}", status, requestIds);
         List<Request> requests = requestRepository.findByIdIn(requestIds);
         Optional<Long> nonPendingRequestId = requests.stream()
                 .filter(request -> !request.getStatus().equals(RequestStatus.PENDING))
                 .findFirst()
                 .map(Request::getId);
-        //Реализация требования "статус можно изменить только у заявок, находящихся в состоянии ожидания"
-        //не совсем понятно как быть, если не все заявки в режиме ожидания, временная реализация до тестов
+
         if (nonPendingRequestId.isPresent()) {
             throw new UnavailableUpdateException("Request", nonPendingRequestId.get());
         }
 
         requests.forEach(request -> request.setStatus(status));
-
+        log.debug("Изменен статус у запросов {}", requests);
         return requests.stream()
                 .map(request -> RequestDto.builder()
                         .id(request.getId())
@@ -67,25 +71,11 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                         .build())
                 .toList();
     }
-
-    @Override
-    public List<RequestDto> getRequestsByIds(List<Long> requestIds) {
-        List<Request> requests = requestRepository.findByIdIn(requestIds);
-        return requests.stream()
-                .map(request -> RequestDto.builder()
-                        .id(request.getId())
-                        .created(request.getCreated())
-                        .event(request.getEvent().getId())
-                        .requester(request.getRequester().getId())
-                        .status(request.getStatus())
-                        .build())
-                .toList();
-    }
-
 
     @Override
     @Transactional
     public RequestDto create(long userId, long eventId) {
+        log.trace("Инициировано создание запроса у пользователя с id {} для события с id {}", userId, eventId);
         if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
             throw new DuplicatedDataException("request", "eventId and userId", eventId);
         }
@@ -104,7 +94,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
 
         Request createdRequest = requestRepository.save(request);
         incrementEventConfirmedRequests(createdRequest, event);
-
+        log.debug("Создан запрос {}", createdRequest);
         return RequestDto.builder()
                 .id(createdRequest.getId())
                 .created(createdRequest.getCreated())
@@ -118,6 +108,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
     @Override
     @Transactional
     public RequestDto cancelRequest(long userId, long requestId) {
+        log.trace("Инициирована отмена запроса с id {} у пользователя с id {}", userId, requestId);
         Request request = findEntityIn(requestRepository, requestId);
 
         if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
@@ -126,6 +117,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
 
         request.setStatus(RequestStatus.CANCELED);
         Request updatedRequest = requestRepository.save(request);
+        log.debug("Обновлен запрос {}", updatedRequest);
         decrementEventConfirmedRequests(updatedRequest);
         return RequestDto.builder()
                 .id(updatedRequest.getId())
@@ -138,8 +130,9 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
 
     @Override
     public List<RequestDto> getUserRequests(long requesterId) {
+        log.trace("Инициировано получение запросов пользователя с id {}", requesterId);
         List<Request> requests = requestRepository.findByRequesterIdOrderByCreatedDesc(requesterId);
-
+        log.debug("Получены запросы пользователя {}", requests);
         return requests.stream()
                 .map(request -> RequestDto.builder()
                         .id(request.getId())

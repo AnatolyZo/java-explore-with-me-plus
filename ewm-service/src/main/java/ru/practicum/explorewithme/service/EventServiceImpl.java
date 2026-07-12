@@ -1,6 +1,7 @@
 package ru.practicum.explorewithme.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -22,7 +23,6 @@ import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.WrongDateIntervalException;
-import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.hit.EndpointHitRequest;
@@ -43,20 +43,20 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class EventServiceImpl extends ServiceBase implements EventService {
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final RequestService requestService;
     private final StatsClient statsClient;
-    private static final int USERS_MIN_HOURS_OFFSET = 2;
-    private static final int ADMINS_MIN_HOURS_OFFSET = 1;
 
     @Override
     public List<EventDto> getEvents(long userId, int from, int size) {
+        log.trace("Инициировано получение событий пользователем с id {}", userId);
         Pageable pageable = new OffsetPageRequest(from, size);
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable);
-
+        log.debug("Получен список событий {}", events);
         if (events.isEmpty()) {
             return List.of();
         }
@@ -67,7 +67,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     @Override
     @Transactional
     public EventDto createEvent(long userId, NewEventDto newEventDto) {
-        checkTimeBeforeEventStart(newEventDto.getEventDate(), USERS_MIN_HOURS_OFFSET);
+        log.trace("Инициировано создание события {} пользователем с id {}", newEventDto, userId);
         Category category = findEntityIn(categoryRepository, newEventDto.getCategory());
         User initiator = findEntityIn(userRepository, userId);
         LocationEmbeddable locationEmbeddable = LocationMapper.toLocationEmbeddable(newEventDto.getLocation());
@@ -77,38 +77,41 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         setParamsOnCreation(event, newEventDto);
 
         Event createdEvent = eventRepository.save(event);
-
+        log.debug("Создано событие {}", createdEvent);
         EventDto result = EventMapper.toEventDto(createdEvent);
         CategoryDto categoryDto = CategoryMapper.toCategoryDto(createdEvent.getCategory());
         UserShortDto userShortDto = UserMapper.toUserShortDto(createdEvent.getInitiator());
         Location location = LocationMapper.toLocation(createdEvent.getLocation());
         setNestedClassesValues(result, categoryDto, userShortDto, location);
+        log.debug("Событие преобразовано в DTO {}", result);
         return result;
     }
 
     @Override
     public EventDto getEvent(long userId, long eventId) {
+        log.trace("Инициировано получение события {} пользователем с id {}", eventId, userId);
         Event event = getEventById(eventId, userId);
+        log.debug("Получено событие {}", event);
         return getEventsWithStats(List.of(event), statsClient).getFirst();
     }
 
     @Override
     @Transactional
     public EventDto updateEvent(long userId, long eventId, UserUpdateEventDto update) {
-        if (update.getEventDate() != null) {
-            checkTimeBeforeEventStart(update.getEventDate(), USERS_MIN_HOURS_OFFSET);
-        }
+        log.trace("Инициировано обновление события с id {} пользователем с id {}, изменения - {}", eventId, userId, update);
 
         Event event = getEventById(eventId, userId);
         checkEventNotCanceled(event);
         EventStatus status = changeEventStatus(update);
         updateEventFields(event, update, status);
         Event updatedEvent = eventRepository.save(event);
+        log.debug("Обновлено событие {}", updatedEvent);
         return getEventsWithStats(List.of(updatedEvent), statsClient).getFirst();
     }
 
     @Override
     public List<RequestDto> getRequests(long userId, long eventId) {
+        log.trace("Инициировано получение запроса пользователем с id {} к событию с id {}", userId, eventId);
         checkEventExistence(userId, eventId);
         return requestService.getRequestsToUsersEvent(eventId);
     }
@@ -116,17 +119,14 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     @Override
     @Transactional
     public ChangedRequestStatusesDto updateRequestStatuses(long userId, long eventId, UpdateRequestStatusDto update) {
+        log.trace("Инициировано обновление статусов запросов пользователем с id {} к событию с id {}, изменения - {}", userId, eventId, update);
         Event event = getEventById(eventId, userId);
         //Обработка ситуации, когда не установлено ограничение по количеству участников
         //или запрос не требует модерации
         if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
-            List<Long> requestIds = update.getRequestIds();
-            List<RequestDto> confirmedRequests = requestService.getRequestsByIds(requestIds);
-            return ChangedRequestStatusesDto.builder()
-                    .confirmedRequests(confirmedRequests)
-                    .rejectedRequests(List.of())
-                    .build();
+            return confirmRequestsIfNoDemandsMade(event, update);
         }
+
         int requestsAvailableToConfirm = event.getParticipantLimit() - event.getConfirmedRequests();
 
         if (requestsAvailableToConfirm == 0) {
@@ -135,33 +135,10 @@ public class EventServiceImpl extends ServiceBase implements EventService {
 
         //Обработка случая подтверждения запросов
         if (update.getStatus().equals(RequestStatus.CONFIRMED)) {
-            //Разделяем запросы на те, которые можем одобрить и отклонить, исходя из количества доступных мест
-            List<Long> requestsToConfirm = update.getRequestIds().stream()
-                    .limit(requestsAvailableToConfirm)
-                    .toList();
-
-            List<Long> requestsToReject = update.getRequestIds().stream()
-                    .skip(requestsAvailableToConfirm)
-                    .toList();
-
-            List<RequestDto> confirmedRequests = requestService.changeRequestStatuses(requestsToConfirm, RequestStatus.CONFIRMED);
-            List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(requestsToReject, RequestStatus.REJECTED);
-            //Обновляем количество свободных мест
-            event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests.size());
-            eventRepository.save(event);
-
-            return ChangedRequestStatusesDto.builder()
-                    .confirmedRequests(confirmedRequests)
-                    .rejectedRequests(rejectedRequests)
-                    .build();
+            return processRequestsWithActionStatusConfirmed(event, update, requestsAvailableToConfirm);
         }
         //Обработка случая отклонения запросов
-        List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(update.getRequestIds(), RequestStatus.REJECTED);
-
-        return ChangedRequestStatusesDto.builder()
-                .confirmedRequests(List.of())
-                .rejectedRequests(rejectedRequests)
-                .build();
+        return processRequestsWithActionStatusRejected(update);
     }
 
     @Override
@@ -176,6 +153,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
                                                   int size,
                                                   String ip,
                                                   String uri) {
+        log.trace("Инициировано получение опубликованных событий");
         checkDateRange(rangeStart, rangeEnd);
         saveHit(ip, uri);
 
@@ -210,12 +188,13 @@ public class EventServiceImpl extends ServiceBase implements EventService {
                     .sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
                     .toList();
         }
-
+        log.debug("Получен список опубликованных событий {}", dtos);
         return getPage(dtos, from, size);
     }
 
     @Override
     public EventDto getPublishedEvent(long eventId, String ip, String uri) {
+        log.trace("Инициировано получение опубликованного события с id {}", eventId);
         saveHit(ip, uri);
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
                 .orElseThrow(() -> new IdNotFoundException(eventId));
@@ -236,11 +215,12 @@ public class EventServiceImpl extends ServiceBase implements EventService {
                                        String rangeEnd,
                                        int from,
                                        int size) {
+        log.trace("Инициирован поиск событий");
         Specification<Event> spec = new AdminEventSearchSpecification(users, states, categories, rangeStart, rangeEnd);
         Pageable pageable = new OffsetPageRequest(from, size);
         Page<Event> eventPage = eventRepository.findAll(spec, pageable);
         List<Event> events = eventPage.getContent();
-
+        log.debug("Получен список событий {}", events);
         if (events.isEmpty()) {
             return List.of();
         }
@@ -251,15 +231,14 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     @Override
     @Transactional
     public EventDto updateEvent(long eventId, AdminUpdateEventDto update) {
-        if (update.getEventDate() != null) {
-            checkTimeBeforeEventStart(update.getEventDate(), ADMINS_MIN_HOURS_OFFSET);
-        }
+        log.trace("Инициировано обновление события с id {} администратором, изменения - {}", eventId, update);
 
         Event event = findEntityIn(eventRepository, eventId);
         checkEventNotPublished(event);
         EventStatus status = changeEventStatus(event, update);
         updateEventFields(event, update, status);
         Event updatedEvent = eventRepository.save(event);
+        log.debug("Обновлено событие {}", updatedEvent);
         return getEventsWithStats(List.of(updatedEvent), statsClient).getFirst();
     }
 
@@ -331,12 +310,6 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         }
     }
 
-    private void checkTimeBeforeEventStart(LocalDateTime eventDate, int minOffset) {
-        if (!eventDate.isAfter(LocalDateTime.now().plusHours(minOffset).minusSeconds(1))) {
-            throw new EarlyDateException(minOffset, eventDate);
-        }
-    }
-
     private void setParamsOnCreation(Event event, NewEventDto newEventDto) {
         event.setCreatedOn(LocalDateTime.now());
         event.setStatus(EventStatus.PENDING);
@@ -379,5 +352,59 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         }
 
         return status;
+    }
+
+    private ChangedRequestStatusesDto changeRequestStatuses(Event event, List<Long> requestsToConfirm, List<Long> requestsToReject) {
+        List<RequestDto> confirmedRequests;
+        if (!requestsToConfirm.isEmpty()) {
+            confirmedRequests = requestService.changeRequestStatuses(requestsToConfirm, RequestStatus.CONFIRMED);
+        } else {
+            confirmedRequests = List.of();
+        }
+
+        List<RequestDto> rejectedRequests;
+        if (!requestsToReject.isEmpty()) {
+            rejectedRequests = requestService.changeRequestStatuses(requestsToReject, RequestStatus.REJECTED);
+        } else {
+            rejectedRequests = List.of();
+        }
+
+        //Обновляем количество свободных мест
+        event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests.size());
+        eventRepository.save(event);
+        log.debug("Обновлены статусы запросов: подтвержденные - {}, отклоненные - {}", confirmedRequests, rejectedRequests);
+        return ChangedRequestStatusesDto.builder()
+                .confirmedRequests(confirmedRequests)
+                .rejectedRequests(rejectedRequests)
+                .build();
+    }
+
+    private ChangedRequestStatusesDto confirmRequestsIfNoDemandsMade(Event event, UpdateRequestStatusDto update) {
+        List<Long> requestIds = update.getRequestIds();
+        return changeRequestStatuses(event, requestIds, List.of());
+    }
+
+    private ChangedRequestStatusesDto processRequestsWithActionStatusConfirmed(Event event,
+                                                                               UpdateRequestStatusDto update,
+                                                                               int requestsAvailableToConfirm) {
+        //Разделяем запросы на те, которые можем одобрить и отклонить, исходя из количества доступных мест
+        List<Long> requestsToConfirm = update.getRequestIds().stream()
+                .limit(requestsAvailableToConfirm)
+                .toList();
+
+        List<Long> requestsToReject = update.getRequestIds().stream()
+                .skip(requestsAvailableToConfirm)
+                .toList();
+
+        return changeRequestStatuses(event, requestsToConfirm, requestsToReject);
+    }
+
+    private ChangedRequestStatusesDto processRequestsWithActionStatusRejected(UpdateRequestStatusDto update) {
+        List<RequestDto> rejectedRequests = requestService.changeRequestStatuses(update.getRequestIds(), RequestStatus.REJECTED);
+
+        return ChangedRequestStatusesDto.builder()
+                .confirmedRequests(List.of())
+                .rejectedRequests(rejectedRequests)
+                .build();
     }
 }

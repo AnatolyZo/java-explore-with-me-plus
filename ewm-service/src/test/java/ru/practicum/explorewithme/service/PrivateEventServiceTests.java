@@ -23,7 +23,6 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.IdNotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.CategoryRepository;
@@ -163,13 +162,6 @@ class PrivateEventServiceTests {
         verify(categoryRepository).findById(newEventDto.getCategory());
         verify(userRepository).findById(USER_ID);
         verify(eventRepository).save(any(Event.class));
-    }
-
-    @Test
-    void createEvent_throwsEarlyDateException_whenEventIsTooSoon() {
-        NewEventDto badEventDto = createTestNewEventDto(CATEGORY_ID, LocalDateTime.now().plusHours(1));
-
-        assertThrows(EarlyDateException.class, () -> eventService.createEvent(USER_ID, badEventDto));
     }
 
     @Test
@@ -349,7 +341,7 @@ class PrivateEventServiceTests {
         RequestDto confirmed3 = createTestRequestDto(requestId3, EVENT_ID, 3, RequestStatus.CONFIRMED);
 
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.of(event));
-        when(requestService.getRequestsByIds(update.getRequestIds())).thenReturn(List.of(confirmed1, confirmed2, confirmed3));
+        when(requestService.changeRequestStatuses(ids, RequestStatus.CONFIRMED)).thenReturn(List.of(confirmed1, confirmed2, confirmed3));
 
         String uri = "/events/" + EVENT_ID;
 
@@ -358,7 +350,7 @@ class PrivateEventServiceTests {
         assertThat(result.getConfirmedRequests()).containsExactlyInAnyOrder(confirmed1, confirmed2, confirmed3);
         assertThat(result.getRejectedRequests()).isEmpty();
 
-        verify(eventRepository, never()).save(event);
+        verify(eventRepository, times(1)).save(event);
     }
 
     @Test
