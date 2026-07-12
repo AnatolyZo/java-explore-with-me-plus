@@ -4,8 +4,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.explorewithme.exception.WrongDateIntervalException;
 
 import java.time.LocalDateTime;
 
@@ -33,7 +35,7 @@ public class ErrorHandler {
     public ResponseEntity<ErrorResponse> methodArgumentNotValid(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getFieldError();
         if (fieldError == null) {
-            return createResponse(HttpStatus.BAD_REQUEST, "incorrect field value");
+            return unexpected(e);
         }
         return createResponse(
                 HttpStatus.BAD_REQUEST,
@@ -45,12 +47,21 @@ public class ErrorHandler {
                         fieldError.getDefaultMessage()));
     }
 
-    private ResponseEntity<ErrorResponse> createResponse(HttpStatus status, String reason) {
-        return ResponseEntity.status(status).body(new ErrorResponse(
-                status.toString(),
-                reason,
-                "",
-                LocalDateTime.now()
-        ));
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> wrongDateInterval(WrongDateIntervalException e) {
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                "wrong date interval",
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> missingServletRequestParameter(MissingServletRequestParameterException e) {
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                "missing request parameter",
+                e.getBody().getDetail()
+        );
     }
 }
