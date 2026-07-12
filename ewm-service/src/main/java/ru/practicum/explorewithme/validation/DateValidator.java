@@ -19,6 +19,6 @@ public class DateValidator implements ConstraintValidator<DateIsNotEarly, LocalD
             return true;
         }
 
-        return !value.isBefore(LocalDateTime.now().plusHours(hours));
+        return !value.isBefore(LocalDateTime.now().plusHours(hours).minusSeconds(1));
     }
 }
