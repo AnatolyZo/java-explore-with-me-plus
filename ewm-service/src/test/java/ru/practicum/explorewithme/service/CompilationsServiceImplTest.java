@@ -9,10 +9,9 @@ import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.dto.compilation.CompilationDto;
 import ru.practicum.explorewithme.dto.compilation.NewCompilationDto;
 import ru.practicum.explorewithme.dto.compilation.UpdateCompilationRequest;
-import ru.practicum.explorewithme.dto.event.EventDto;
-import ru.practicum.explorewithme.dto.event.Location;
+import ru.practicum.explorewithme.dto.event.EventShortDto;
 import ru.practicum.explorewithme.entity.*;
-import ru.practicum.explorewithme.exception.IdNotFoundException;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.mapper.CompilationMapper;
 import ru.practicum.explorewithme.mapper.UserMapper;
@@ -93,7 +92,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> compilationService.deleteCompilation(absentId));
 
         // Assert
-        assertException(thrown, IdNotFoundException.class);
+        assertException(thrown, NotFoundException.class);
     }
 
     @Test
@@ -189,7 +188,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> compilationService.updateCompilation(absentId, body));
 
         // Assert
-        assertException(thrown, IdNotFoundException.class);
+        assertException(thrown, NotFoundException.class);
     }
 
     @Test
@@ -239,7 +238,7 @@ public class CompilationsServiceImplTest extends ServiceTest {
         Throwable thrown = Assertions.catchThrowable(() -> compilationService.getCompilation(absentId));
 
         // Assert
-        assertException(thrown, IdNotFoundException.class);
+        assertException(thrown, NotFoundException.class);
     }
 
     private List<Event> createEvents(List<Long> eventIds) {
@@ -264,11 +263,9 @@ public class CompilationsServiceImplTest extends ServiceTest {
                         compilation.getEvents().stream()
                                 .map(compilationEvent -> {
                                     Event event = compilationEvent.getEvent();
-                                    return EventDto.builder()
+                                    return EventShortDto.builder()
                                             .id(event.getId())
-                                            .createdOn(LocalDateTime.MIN)
                                             .initiator(UserMapper.toUserShortDto(event.getInitiator()))
-                                            .location(new Location(0d, 0d))
                                             .category(CategoryMapper.toCategoryDto(event.getCategory()))
                                             .build();
                                 })

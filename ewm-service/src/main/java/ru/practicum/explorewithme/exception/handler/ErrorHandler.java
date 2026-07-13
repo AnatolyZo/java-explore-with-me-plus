@@ -20,42 +20,42 @@ public class ErrorHandler {
     public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getFieldError();
         if (fieldError == null) {
-            return createErrorResponse("incorrect field value", "", HttpStatus.BAD_REQUEST);
+            return createErrorResponse("", "incorrect field value", HttpStatus.BAD_REQUEST);
         }
 
         return createErrorResponse(
-                "incorrect field value",
                 String.format(
                         "value of field '%s'=%s is incorrect, cause: %s",
                         fieldError.getField(),
                         fieldError.getRejectedValue(),
                         fieldError.getDefaultMessage()),
+                "incorrect field value",
                 HttpStatus.BAD_REQUEST);
     }
 
 
     @ExceptionHandler
     public ResponseEntity<ApiError> wrongInterval(WrongDateIntervalException e) {
-        return createErrorResponse("incorrect request", e.getMessage(), HttpStatus.BAD_REQUEST);
+        return createErrorResponse(e.getMessage(), "incorrect request", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> constraintViolation(ConstraintViolationException e) {
-        return createErrorResponse("incorrect field value", e.getMessage(), HttpStatus.BAD_REQUEST);
+        return createErrorResponse(e.getMessage(), "incorrect field value", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> methodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
-        return createErrorResponse("incorrect field value", e.getMessage(), HttpStatus.BAD_REQUEST);
+        return createErrorResponse(e.getMessage(), "incorrect field value", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> duplicatedData(DuplicatedDataException e) {
-        return createErrorResponse("duplicated data", e.getMessage(), HttpStatus.CONFLICT);
+        return createErrorResponse(e.getMessage(), "duplicated data", HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> notFound(IdNotFoundException e) {
+    public ResponseEntity<ApiError> notFound(NotFoundException e) {
         return createErrorResponse("required object was not found", e.getMessage(), HttpStatus.NOT_FOUND);
     }
 
@@ -66,14 +66,14 @@ public class ErrorHandler {
 
     @ExceptionHandler
     public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
-        return createErrorResponse("update is unavailable", e.getMessage(), HttpStatus.CONFLICT);
+        return createErrorResponse(e.getMessage(), "update is unavailable", HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> unexpected(RuntimeException e) {
         return createErrorResponse(
-                "unexpected error",
                 e.getMessage(),
+                "unexpected error",
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

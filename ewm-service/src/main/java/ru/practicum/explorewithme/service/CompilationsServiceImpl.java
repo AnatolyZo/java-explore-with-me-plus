@@ -9,10 +9,13 @@ import ru.practicum.explorewithme.dto.compilation.CompilationDto;
 import ru.practicum.explorewithme.dto.event.EventDto;
 import ru.practicum.explorewithme.dto.compilation.NewCompilationDto;
 import ru.practicum.explorewithme.dto.compilation.UpdateCompilationRequest;
+import ru.practicum.explorewithme.dto.event.EventShortDto;
 import ru.practicum.explorewithme.entity.Compilation;
 import ru.practicum.explorewithme.entity.CompilationEvent;
 import ru.practicum.explorewithme.entity.Event;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.mapper.CompilationMapper;
+import ru.practicum.explorewithme.mapper.EventMapper;
 import ru.practicum.explorewithme.repository.CompilationRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 
@@ -67,7 +70,10 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
             return compilationDto;
         }
         List<EventDto> eventWithStats = getEventsWithStats(events, statsClient);
-        compilationDto.setEvents(eventWithStats);
+        List<EventShortDto> shortEvents = eventWithStats.stream()
+                .map(EventMapper::toEventShortDto)
+                .toList();
+        compilationDto.setEvents(shortEvents);
         return compilationDto;
     }
 
@@ -75,7 +81,7 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
     @Transactional
     public void deleteCompilation(long compId) {
         log.trace("Инициировано удаление подборки с id={}", compId);
-        checkEntityExistsIn(compilationRepository, compId);
+        checkEntityExistsIn(compilationRepository, compId, Entities.COMPILATION);
         compilationRepository.deleteById(compId);
         log.debug("Подборка с id={} удалена", compId);
     }
@@ -84,7 +90,7 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
     @Transactional
     public CompilationDto updateCompilation(long compId, UpdateCompilationRequest body) {
         log.trace("Инициировано обновление сборки с id={}. Тело запроса: {}", compId, body);
-        Compilation compilation = findEntityIn(compilationRepository, compId);
+        Compilation compilation = findEntityIn(compilationRepository, compId, Entities.COMPILATION);
         log.trace("Подборка найдена: {}", compilation);
         Compilation update = updateCompilationData(compilation, body);
         log.debug("Создано обновление подборки: {}", update);
@@ -123,7 +129,7 @@ public class CompilationsServiceImpl extends ServiceBase implements Compilations
     @Override
     public CompilationDto getCompilation(long compId) {
         log.trace("Инициировано получение подборки с id={}", compId);
-        Compilation result = findEntityIn(compilationRepository, compId);
+        Compilation result = findEntityIn(compilationRepository, compId, Entities.COMPILATION);
         log.debug("Найдена подборка {}", result);
         return composeComplicationResponse(result);
     }

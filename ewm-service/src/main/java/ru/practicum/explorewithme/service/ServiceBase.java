@@ -13,7 +13,8 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.IdNotFoundException;
+import ru.practicum.explorewithme.exception.Entities;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.mapper.EventMapper;
 import ru.practicum.explorewithme.mapper.LocationMapper;
@@ -30,14 +31,14 @@ import static ru.practicum.explorewithme.controller.ControllerConstants.URL_EVEN
 @Slf4j
 public class ServiceBase {
     /// Убрал первый параметр из NFE чтобы не усложнять метод
-    protected <E> E findEntityIn(JpaRepository<E, Long> repository, long id) {
+    protected <E> E findEntityIn(JpaRepository<E, Long> repository, long id, Entities entity) {
         return repository.findById(id)
-                .orElseThrow(() -> new IdNotFoundException(id));
+                .orElseThrow(() -> new NotFoundException(entity, id));
     }
 
-    protected <E> void checkEntityExistsIn(JpaRepository<E, Long> repository, long id) {
+    protected <E> void checkEntityExistsIn(JpaRepository<E, Long> repository, long id, Entities entity) {
         if (!repository.existsById(id)) {
-            throw new IdNotFoundException(id);
+            throw new NotFoundException(entity, id);
         }
     }
 

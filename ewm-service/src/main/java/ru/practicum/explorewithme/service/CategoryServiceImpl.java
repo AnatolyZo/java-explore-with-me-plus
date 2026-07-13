@@ -9,6 +9,7 @@ import ru.practicum.explorewithme.dto.category.NewCategoryDto;
 import ru.practicum.explorewithme.dto.category.UpdateCategoryDto;
 import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.NotEmptyCategoryException;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.repository.CategoryRepository;
@@ -45,7 +46,7 @@ public class CategoryServiceImpl extends ServiceBase implements CategoryService 
     @Override
     public void deleteCategory(long catId) {
         log.trace("Инициировано удаление категории с id={}", catId);
-        checkEntityExistsIn(categoryRepository, catId);
+        checkEntityExistsIn(categoryRepository, catId, Entities.CATEGORY);
         checkCategoryEventsExistsBy(catId);
         categoryRepository.deleteById(catId);
         log.debug("Категория с id={} удалена", catId);
@@ -62,7 +63,7 @@ public class CategoryServiceImpl extends ServiceBase implements CategoryService 
     @Override
     public CategoryDto updateCategory(long catId, UpdateCategoryDto body) {
         log.trace("Инициировано сохранение категории с id={}. Тело запроса: {}", catId, body);
-        Category category = findEntityIn(categoryRepository, catId);
+        Category category = findEntityIn(categoryRepository, catId, Entities.CATEGORY);
         log.trace("Категория найдена: {}", category);
         if (category.getName().equals(body.getName())) {
             log.trace("Имя категории не изменилось");
@@ -89,7 +90,7 @@ public class CategoryServiceImpl extends ServiceBase implements CategoryService 
     @Override
     public CategoryDto getCategory(long catId) {
         log.trace("Инициировано получение категории с id={}", catId);
-        Category result = findEntityIn(categoryRepository, catId);
+        Category result = findEntityIn(categoryRepository, catId, Entities.CATEGORY);
         log.debug("Найдена категория {}", result);
         return CategoryMapper.toCategoryDto(result);
     }

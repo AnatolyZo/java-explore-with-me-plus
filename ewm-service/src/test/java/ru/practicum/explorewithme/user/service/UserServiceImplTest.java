@@ -12,7 +12,7 @@ import ru.practicum.explorewithme.dto.user.NewUserRequest;
 import ru.practicum.explorewithme.dto.user.UserDto;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
-import ru.practicum.explorewithme.exception.IdNotFoundException;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.repository.UserRepository;
 import ru.practicum.explorewithme.service.UserServiceImpl;
 
@@ -157,7 +157,7 @@ class UserServiceImplTest {
     void deleteUser_whenUserDoesNotExist_shouldThrowNotFoundException() {
         when(userRepository.existsById(1L)).thenReturn(false);
 
-        assertThrows(IdNotFoundException.class, () -> userService.deleteUser(1L));
+        assertThrows(NotFoundException.class, () -> userService.deleteUser(1L));
 
         verify(userRepository, never()).deleteById(1L);
     }

@@ -23,7 +23,7 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.IdNotFoundException;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.CategoryRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
@@ -189,7 +189,7 @@ class PrivateEventServiceTests {
     void getEvent_throwsNotFoundException_whenEventDoesNotBelongToUser() {
         when(eventRepository.findByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(Optional.empty());
 
-        assertThrows(IdNotFoundException.class, () -> eventService.getEvent(USER_ID, EVENT_ID));
+        assertThrows(NotFoundException.class, () -> eventService.getEvent(USER_ID, EVENT_ID));
     }
 
     @Test
@@ -265,7 +265,7 @@ class PrivateEventServiceTests {
     void getRequests_throwsNotFoundException_whenEventDoesNotExist() {
         when(eventRepository.existsByIdAndInitiatorId(EVENT_ID, USER_ID)).thenReturn(false);
 
-        assertThrows(IdNotFoundException.class, () -> eventService.getRequests(USER_ID, EVENT_ID));
+        assertThrows(NotFoundException.class, () -> eventService.getRequests(USER_ID, EVENT_ID));
     }
 
     @Test
@@ -346,7 +346,7 @@ class PrivateEventServiceTests {
         String uri = "/events/" + EVENT_ID;
 
         ChangedRequestStatusesDto result = eventService.updateRequestStatuses(USER_ID, EVENT_ID, update);
-        System.out.println(result);
+
         assertThat(result.getConfirmedRequests()).containsExactlyInAnyOrder(confirmed1, confirmed2, confirmed3);
         assertThat(result.getRejectedRequests()).isEmpty();
 
@@ -452,7 +452,7 @@ class PrivateEventServiceTests {
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> eventService.updateEvent(eventId, body))
-                .isInstanceOf(IdNotFoundException.class);
+                .isInstanceOf(NotFoundException.class);
     }
 
     @Test
@@ -558,6 +558,8 @@ class PrivateEventServiceTests {
     private RequestDto createTestRequestDto(long requestId, long eventId, long requesterId, RequestStatus status) {
         return RequestDto.builder()
                 .id(requestId)
+                .event(eventId)
+                .requester(requesterId)
                 .created(LocalDateTime.now())
                 .status(status)
                 .build();

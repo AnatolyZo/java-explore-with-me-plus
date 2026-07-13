@@ -9,6 +9,7 @@ import ru.practicum.explorewithme.dto.user.NewUserRequest;
 import ru.practicum.explorewithme.dto.user.UserDto;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.mapper.UserMapper;
 import ru.practicum.explorewithme.repository.UserRepository;
 
@@ -50,7 +51,7 @@ public class UserServiceImpl extends ServiceBase implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long userId) {
-        checkEntityExistsIn(userRepository, userId);
+        checkEntityExistsIn(userRepository, userId, Entities.USER);
         userRepository.deleteById(userId);
     }
 }

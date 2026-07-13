@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import ru.practicum.explorewithme.dto.event.EventDto;
+import ru.practicum.explorewithme.dto.event.EventShortDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.List;
 public class CompilationDto {
     @Setter
     @Builder.Default
-    private List<EventDto> events = new ArrayList<>();
+    private List<EventShortDto> events = new ArrayList<>();
     private long id;
     private boolean pinned;
     private String title;

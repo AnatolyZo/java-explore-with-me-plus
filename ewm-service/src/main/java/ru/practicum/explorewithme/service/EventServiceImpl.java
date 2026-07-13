@@ -22,8 +22,9 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.WrongDateIntervalException;
-import ru.practicum.explorewithme.exception.IdNotFoundException;
+import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.hit.EndpointHitRequest;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
@@ -68,8 +69,8 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     @Transactional
     public EventDto createEvent(long userId, NewEventDto newEventDto) {
         log.trace("Инициировано создание события {} пользователем с id {}", newEventDto, userId);
-        Category category = findEntityIn(categoryRepository, newEventDto.getCategory());
-        User initiator = findEntityIn(userRepository, userId);
+        Category category = findEntityIn(categoryRepository, newEventDto.getCategory(), Entities.CATEGORY);
+        User initiator = findEntityIn(userRepository, userId, Entities.USER);
         LocationEmbeddable locationEmbeddable = LocationMapper.toLocationEmbeddable(newEventDto.getLocation());
         //Формируем событие и сохраняем
         Event event = EventMapper.toEvent(newEventDto);
@@ -123,7 +124,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         Event event = getEventById(eventId, userId);
         //Обработка ситуации, когда не установлено ограничение по количеству участников
         //или запрос не требует модерации
-        if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
+        if ((event.getParticipantLimit() == 0 || !event.isRequestModeration()) && update.getStatus().equals(RequestStatus.CONFIRMED)) {
             return confirmRequestsIfNoDemandsMade(event, update);
         }
 
@@ -197,14 +198,14 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         log.trace("Инициировано получение опубликованного события с id {}", eventId);
         saveHit(ip, uri);
         Event event = eventRepository.findByIdAndStatus(eventId, EventStatus.PUBLISHED)
-                .orElseThrow(() -> new IdNotFoundException(eventId));
+                .orElseThrow(() -> new NotFoundException(Entities.EVENT, eventId));
         return getEventsWithStats(List.of(event), statsClient).getFirst();
     }
 
     @Override
     public Event getEventById(long eventId, long userId) {
         return eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new IdNotFoundException(eventId));
+                .orElseThrow(() -> new NotFoundException(Entities.EVENT, eventId));
     }
 
     @Override
@@ -233,8 +234,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     public EventDto updateEvent(long eventId, AdminUpdateEventDto update) {
         log.trace("Инициировано обновление события с id {} администратором, изменения - {}", eventId, update);
 
-        Event event = findEntityIn(eventRepository, eventId);
-        checkEventNotPublished(event);
+        Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
         EventStatus status = changeEventStatus(event, update);
         updateEventFields(event, update, status);
         Event updatedEvent = eventRepository.save(event);
@@ -306,7 +306,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
 
     private void checkEventExistence(long userId, long eventId) {
         if (!eventRepository.existsByIdAndInitiatorId(eventId, userId)) {
-            throw new IdNotFoundException(userId);
+            throw new NotFoundException(Entities.EVENT, eventId);
         }
     }
 
@@ -344,8 +344,11 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         EventStatus status;
 
         if (update.getStatus() != null && update.getStatus().equals(AdminEventUpdateAction.PUBLISH_EVENT)) {
+            checkEventNotPublished(event);
             status = EventStatus.PUBLISHED;
+            event.setPublishedOn(LocalDateTime.now());
         } else if (update.getStatus() != null && update.getStatus().equals(AdminEventUpdateAction.REJECT_EVENT)) {
+            checkEventNotPublished(event);
             status = EventStatus.CANCELED;
         } else {
             status = event.getStatus();

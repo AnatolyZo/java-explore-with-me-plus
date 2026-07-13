@@ -4,8 +4,7 @@ package ru.practicum.explorewithme.controller.priv;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -15,14 +14,15 @@ import ru.practicum.explorewithme.service.RequestService;
 
 import java.util.List;
 
+import static ru.practicum.explorewithme.controller.ControllerConstants.*;
+
 @RestController
-@RequestMapping(path = "/users/{userId}/requests")
+@RequestMapping(path = ACCESS_PRIVATE + "/{" + ID_USER + "}" + URL_REQUESTS)
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class PrivateRequestController {
     private final RequestService service;
-
-    private static final Logger log = LoggerFactory.getLogger(PrivateRequestController.class);
 
     @PostMapping
     public ResponseEntity<RequestDto> addRequest(@PathVariable @NotNull @Positive Long userId,

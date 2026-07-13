@@ -11,6 +11,7 @@ import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.Request;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.RequestRepository;
@@ -80,9 +81,9 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
             throw new DuplicatedDataException("request", "eventId and userId", eventId);
         }
 
-        Event event = findEntityIn(eventRepository, eventId);
+        Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
         requestChecks(event, userId);
-        User requester = findEntityIn(userRepository, userId);
+        User requester = findEntityIn(userRepository, userId, Entities.USER);
         RequestStatus status = changeRequestStatus(event);
 
         Request request = Request.builder()
@@ -109,7 +110,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
     @Transactional
     public RequestDto cancelRequest(long userId, long requestId) {
         log.trace("Инициирована отмена запроса с id {} у пользователя с id {}", userId, requestId);
-        Request request = findEntityIn(requestRepository, requestId);
+        Request request = findEntityIn(requestRepository, requestId, Entities.REQUEST);
 
         if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             throw new DuplicatedDataException("request", "status", RequestStatus.CONFIRMED);
@@ -150,11 +151,11 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
         }
 
         if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
-            throw new DuplicatedDataException("request", "eventId and userId", event.getId());
+            throw new UnavailableUpdateException("Event", event.getId());
         }
 
         if (event.getParticipantLimit() - event.getConfirmedRequests() == 0 && event.getParticipantLimit() != 0) {
-            throw new DuplicatedDataException("request", "eventId and userId", event.getId());
+            throw new UnavailableUpdateException("Event", event.getId());
         }
     }
 
@@ -180,7 +181,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
 
     private void decrementEventConfirmedRequests(Request request) {
         if (request.getStatus().equals(RequestStatus.CANCELED)) {
-            Event event = findEntityIn(eventRepository, request.getEvent().getId());
+            Event event = findEntityIn(eventRepository, request.getEvent().getId(), Entities.REQUEST);
             int confirmedRequests = event.getConfirmedRequests();
             event.setConfirmedRequests(--confirmedRequests);
             eventRepository.save(event);

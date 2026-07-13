@@ -13,6 +13,7 @@ import ru.practicum.explorewithme.dto.category.CategoryDto;
 import ru.practicum.explorewithme.dto.event.*;
 import ru.practicum.explorewithme.dto.request.ChangedRequestStatusesDto;
 import ru.practicum.explorewithme.dto.request.RequestDto;
+import ru.practicum.explorewithme.dto.request.RequestStatus;
 import ru.practicum.explorewithme.dto.request.UpdateRequestStatusDto;
 import ru.practicum.explorewithme.dto.user.UserShortDto;
 import ru.practicum.explorewithme.service.EventService;
@@ -105,6 +106,7 @@ public class PrivateEventControllerTests {
 
         update = UpdateRequestStatusDto.builder()
                 .requestIds(List.of(1L))
+                .status(RequestStatus.CONFIRMED)
                 .build();
 
         responseRequest = RequestDto.builder()
@@ -177,9 +179,8 @@ public class PrivateEventControllerTests {
         when(eventService.getRequests(userId, eventId))
                 .thenReturn(List.of(responseRequest));
 
-        mvc.perform(patch(URL_BASE_EVENTS_ID + URL_REQUESTS, userId, eventId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(postRequest)))
+        mvc.perform(get(URL_BASE_EVENTS_ID + URL_REQUESTS, userId, eventId)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
@@ -193,7 +194,7 @@ public class PrivateEventControllerTests {
 
         mvc.perform(patch(URL_BASE_EVENTS_ID + URL_REQUESTS, userId, eventId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(postRequest)))
+                        .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk());
     }
 }

@@ -75,7 +75,7 @@ public class PrivateEventController {
     public ResponseEntity<ChangedRequestStatusesDto> updateRequestStatuses(
             @PathVariable(name = ID_USER) long userId,
             @PathVariable(name = ID_EVENT) long eventId,
-            @RequestBody UpdateRequestStatusDto update
+            @Valid @RequestBody UpdateRequestStatusDto update
     ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(eventService.updateRequestStatuses(userId, eventId, update));
