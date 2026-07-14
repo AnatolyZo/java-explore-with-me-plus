@@ -23,7 +23,6 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.EarlyDateException;
 import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
