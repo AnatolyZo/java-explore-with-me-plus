@@ -39,7 +39,7 @@ public class CategoryServiceImpl extends ServiceBase implements CategoryService 
     private void checkNameUniqueness(String name) {
         if (categoryRepository.existsByName(name)) {
             log.info("Категория с именем '{}' уже существует", name);
-            throw new DuplicatedDataException("category", "name", name);
+            throw new DuplicatedDataException(Entities.CATEGORY.name(), "name", name);
         }
     }
 

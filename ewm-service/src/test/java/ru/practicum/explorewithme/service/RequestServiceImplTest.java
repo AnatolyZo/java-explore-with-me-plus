@@ -8,8 +8,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.explorewithme.dto.event.EventStatus;
 import ru.practicum.explorewithme.dto.request.RequestDto;
 import ru.practicum.explorewithme.dto.request.RequestStatus;
-import ru.practicum.explorewithme.entity.*;
+import ru.practicum.explorewithme.entity.Event;
+import ru.practicum.explorewithme.entity.Request;
+import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.DuplicatedDataException;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.RequestRepository;
@@ -20,12 +23,13 @@ import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
-class RequestServiceImplTest {
-
+public class RequestServiceImplTest {
     @Mock
     private RequestRepository requestRepository;
 
@@ -86,7 +90,7 @@ class RequestServiceImplTest {
 
         assertThatThrownBy(() -> requestService.create(USER_ID, EVENT_ID))
                 .isInstanceOf(DuplicatedDataException.class)
-                .hasMessageContaining("request");
+                .hasMessageContaining(Entities.REQUEST.name());
 
         verify(requestRepository, times(1)).existsByEventIdAndRequesterId(EVENT_ID, USER_ID);
         verify(eventRepository, never()).findById(anyLong());

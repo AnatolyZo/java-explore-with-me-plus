@@ -75,7 +75,7 @@ class UserServiceImplTest {
 
         DuplicatedDataException exception = assertThrows(DuplicatedDataException.class, () -> userService.createUser(request));
 
-        assertEquals("User with parameter 'email'=test-user@mail.com already exists", exception.getMessage());
+        assertEquals("USER with parameter 'email'=test-user@mail.com already exists", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 

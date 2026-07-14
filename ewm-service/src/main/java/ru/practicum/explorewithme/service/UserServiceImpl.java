@@ -41,7 +41,7 @@ public class UserServiceImpl extends ServiceBase implements UserService {
     @Transactional
     public UserDto createUser(NewUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicatedDataException("User", "email", request.getEmail());
+            throw new DuplicatedDataException(Entities.USER.name(), "email", request.getEmail());
         }
 
         User user = userRepository.save(UserMapper.toUser(request));

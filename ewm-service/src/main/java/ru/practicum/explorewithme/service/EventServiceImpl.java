@@ -22,10 +22,7 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.Entities;
-import ru.practicum.explorewithme.exception.WrongDateIntervalException;
-import ru.practicum.explorewithme.exception.NotFoundException;
-import ru.practicum.explorewithme.exception.UnavailableUpdateException;
+import ru.practicum.explorewithme.exception.*;
 import ru.practicum.explorewithme.hit.EndpointHitRequest;
 import ru.practicum.explorewithme.mapper.CategoryMapper;
 import ru.practicum.explorewithme.mapper.EventMapper;
@@ -51,6 +48,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     private final UserRepository userRepository;
     private final RequestService requestService;
     private final StatsClient statsClient;
+    private static final int ADMIN_MIN_OFFSET = 1;
 
     @Override
     public List<EventDto> getEvents(long userId, int from, int size) {
@@ -131,7 +129,7 @@ public class EventServiceImpl extends ServiceBase implements EventService {
         int requestsAvailableToConfirm = event.getParticipantLimit() - event.getConfirmedRequests();
 
         if (requestsAvailableToConfirm == 0) {
-            throw new UnavailableUpdateException("Event", eventId);
+            throw new UnavailableUpdateException(Entities.EVENT.name(), eventId);
         }
 
         //Обработка случая подтверждения запросов
@@ -242,9 +240,21 @@ public class EventServiceImpl extends ServiceBase implements EventService {
     @Transactional
     public EventDto updateEvent(long eventId, AdminUpdateEventDto update) {
         log.trace("Инициировано обновление события с id {} администратором, изменения - {}", eventId, update);
-
         Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
         EventStatus status = changeEventStatus(event, update);
+
+        //Валидация даты события проходит после изменения статуса для случая изменения данных о событии одновременно с публикацией
+        if (event.getPublishedOn() != null) {
+            if (update.getEventDate() != null && !update.getEventDate().isAfter(event.getPublishedOn().plusHours(ADMIN_MIN_OFFSET))) {
+                throw new EarlyDateException(ADMIN_MIN_OFFSET, event.getEventDate());
+            }
+            //Обработка случая, если событие изменяется, но не опубликовано
+        } else {
+            if (update.getEventDate() != null && !update.getEventDate().isAfter(event.getCreatedOn().plusHours(ADMIN_MIN_OFFSET))) {
+                throw new EarlyDateException(ADMIN_MIN_OFFSET, event.getEventDate());
+            }
+        }
+
         updateEventFields(event, update, status);
         Event updatedEvent = eventRepository.save(event);
         log.debug("Обновлено событие {}", updatedEvent);
@@ -327,13 +337,13 @@ public class EventServiceImpl extends ServiceBase implements EventService {
 
     private void checkEventNotCanceled(Event event) {
         if (!event.getStatus().equals(EventStatus.CANCELED) && !event.getStatus().equals(EventStatus.PENDING)) {
-            throw new UnavailableUpdateException("Event", event.getId());
+            throw new UnavailableUpdateException(Entities.EVENT.name(), event.getId());
         }
     }
 
     private void checkEventNotPublished(Event event) {
         if (!event.getStatus().equals(EventStatus.PENDING)) {
-            throw new UnavailableUpdateException("Event", event.getId());
+            throw new UnavailableUpdateException(Entities.EVENT.name(), event.getId());
         }
     }
 

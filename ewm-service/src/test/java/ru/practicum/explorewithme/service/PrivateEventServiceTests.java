@@ -23,6 +23,8 @@ import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.LocationEmbeddable;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.exception.EarlyDateException;
+import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.CategoryRepository;
@@ -432,10 +434,8 @@ class PrivateEventServiceTests {
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
         when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act
         EventDto result = eventService.updateEvent(eventId, body);
 
-        // Assert
         assertThat(result.getId()).isEqualTo(eventId);
         assertThat(result.getStatus()).isEqualTo(EventStatus.PUBLISHED);
         assertThat(result.getViews()).isEqualTo(42L);
@@ -457,7 +457,7 @@ class PrivateEventServiceTests {
 
     @Test
     void updateEventByAdmin_nonPendingEvent_throwsUnavailableUpdateException() {
-        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED); // уже не PENDING
+        Event event = createTestEvent(EVENT_ID, USER_ID, CATEGORY_ID, EventStatus.PUBLISHED);
 
         AdminUpdateEventDto body = createUpdateEventDto(AdminEventUpdateAction.REJECT_EVENT);
 
@@ -465,7 +465,7 @@ class PrivateEventServiceTests {
 
         assertThatThrownBy(() -> eventService.updateEvent(EVENT_ID, body))
                 .isInstanceOf(UnavailableUpdateException.class)
-                .hasMessageContaining("Event");
+                .hasMessageContaining(Entities.EVENT.name());
 
         verify(eventRepository, never()).save(any());
     }
@@ -474,7 +474,6 @@ class PrivateEventServiceTests {
     void updateEvent_rejectAction_mapsToCancelledStatus() {
         long eventId = 1L;
         Event event = createTestEvent(eventId, 1L, 3L, EventStatus.PENDING);
-
         AdminUpdateEventDto body = createUpdateEventDto(AdminEventUpdateAction.REJECT_EVENT);
 
         ViewStatsResponse stats = new ViewStatsResponse(null, "/events/" + eventId, 5L);

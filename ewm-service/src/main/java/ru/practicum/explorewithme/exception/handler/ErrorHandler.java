@@ -78,6 +78,11 @@ public class ErrorHandler {
         );
     }
 
+    @ExceptionHandler
+    public ResponseEntity<ApiError> earlyDate(EarlyDateException e) {
+        return createErrorResponse(e.getMessage(), "date is early", HttpStatus.BAD_REQUEST);
+    }
+
     private ResponseEntity<ApiError> createErrorResponse(String message, String reason, HttpStatus status) {
         return ResponseEntity.status(status).body(
                 new ApiError(

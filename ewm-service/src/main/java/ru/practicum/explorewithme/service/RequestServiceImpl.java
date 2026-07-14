@@ -57,7 +57,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
                 .map(Request::getId);
 
         if (nonPendingRequestId.isPresent()) {
-            throw new UnavailableUpdateException("Request", nonPendingRequestId.get());
+            throw new UnavailableUpdateException(Entities.REQUEST.name(), nonPendingRequestId.get());
         }
 
         requests.forEach(request -> request.setStatus(status));
@@ -78,7 +78,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
     public RequestDto create(long userId, long eventId) {
         log.trace("Инициировано создание запроса у пользователя с id {} для события с id {}", userId, eventId);
         if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
-            throw new DuplicatedDataException("request", "eventId and userId", eventId);
+            throw new DuplicatedDataException(Entities.REQUEST.name(), "eventId and userId", eventId);
         }
 
         Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
@@ -113,7 +113,7 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
         Request request = findEntityIn(requestRepository, requestId, Entities.REQUEST);
 
         if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
-            throw new DuplicatedDataException("request", "status", RequestStatus.CONFIRMED);
+            throw new DuplicatedDataException(Entities.REQUEST.name(), "status", RequestStatus.CONFIRMED);
         }
 
         request.setStatus(RequestStatus.CANCELED);
@@ -147,15 +147,15 @@ public class RequestServiceImpl extends ServiceBase implements RequestService {
 
     private void requestChecks(Event event, long userId) {
         if (event.getInitiator().getId() == userId) {
-            throw new DuplicatedDataException("request", "eventId and userId", event.getId());
+            throw new DuplicatedDataException(Entities.REQUEST.name(), "eventId and userId", event.getId());
         }
 
         if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
-            throw new UnavailableUpdateException("Event", event.getId());
+            throw new UnavailableUpdateException(Entities.EVENT.name(), event.getId());
         }
 
         if (event.getParticipantLimit() - event.getConfirmedRequests() == 0 && event.getParticipantLimit() != 0) {
-            throw new UnavailableUpdateException("Event", event.getId());
+            throw new UnavailableUpdateException(Entities.EVENT.name(), event.getId());
         }
     }
 
