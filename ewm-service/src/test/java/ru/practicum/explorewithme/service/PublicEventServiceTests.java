@@ -5,7 +5,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.explorewithme.StatsClient;
 import ru.practicum.explorewithme.dto.event.EventDto;
@@ -63,7 +64,7 @@ class PublicEventServiceTests {
         Event second = createEvent(2L, "Second event", EventStatus.PUBLISHED, 0);
         List<Event> events = List.of(first, second);
 
-        when(eventRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(events);
+        when(eventRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(events));
         when(statsClient.getStatistics(any(LocalDateTime.class), any(LocalDateTime.class), anyList(), eq(true)))
                 .thenReturn(List.of(
                         new ViewStatsResponse("ewm-main-service", "/events/1", 11L),
@@ -95,7 +96,7 @@ class PublicEventServiceTests {
 
     @Test
     void getPublishedEvents_doesNotRequestStatsWhenEventsNotFound() {
-        when(eventRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of());
+        when(eventRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
         List<EventShortDto> result = eventService.getPublishedEvents(
                 null,

@@ -172,25 +172,34 @@ public class EventServiceImpl extends ServiceBase implements EventService {
                 .and(UsersEventSearchSpecifications.eventDateTo(rangeEnd))
                 .and(UsersEventSearchSpecifications.onlyAvailable(onlyAvailable));
 
-        Sort eventsSort = sort == PublicEventSort.EVENT_DATE ? Sort.by("eventDate").ascending() : Sort.unsorted();
-        List<Event> events = eventRepository.findAll(specification, eventsSort);
+        if (sort == PublicEventSort.VIEWS) {
+            List<Event> events = eventRepository.findAll(specification);
+
+            if (events.isEmpty()) {
+                return List.of();
+            }
+
+            List<EventShortDto> dtos = getEventsWithStats(events, statsClient).stream()
+                    .map(EventMapper::toEventShortDto)
+                    .sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
+                    .toList();
+            log.debug("Получен список опубликованных событий {}", dtos);
+            return getPage(dtos, from, size);
+        }
+
+        Pageable pageable = new OffsetPageRequest(from, size, Sort.by("eventDate").ascending());
+        Page<Event> eventPage = eventRepository.findAll(specification, pageable);
+        List<Event> events = eventPage.getContent();
 
         if (events.isEmpty()) {
             return List.of();
         }
 
-        List<EventDto> eventsDto = getEventsWithStats(events, statsClient);
-        List<EventShortDto> dtos = eventsDto.stream()
+        List<EventShortDto> dtos = getEventsWithStats(events, statsClient).stream()
                 .map(EventMapper::toEventShortDto)
                 .toList();
-
-        if (sort == PublicEventSort.VIEWS) {
-            dtos = dtos.stream()
-                    .sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
-                    .toList();
-        }
         log.debug("Получен список опубликованных событий {}", dtos);
-        return getPage(dtos, from, size);
+        return dtos;
     }
 
     @Override
