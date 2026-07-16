@@ -5,5 +5,6 @@ public enum Entities {
     USER,
     CATEGORY,
     REQUEST,
-    COMPILATION
+    COMPILATION,
+    COMMENT
 }
