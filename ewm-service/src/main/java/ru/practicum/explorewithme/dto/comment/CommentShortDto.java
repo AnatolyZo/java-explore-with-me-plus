@@ -8,7 +8,7 @@ import lombok.ToString;
 
 @Getter
 @ToString
-@NoArgsConstructor
+@Builder
 public class CommentShortDto {
     private long id;
     private String text;

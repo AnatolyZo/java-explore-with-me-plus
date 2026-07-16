@@ -36,8 +36,8 @@ public class PublicCommentsController {
     }
 
     @GetMapping("/{" + ID_COMMENT + "}")
-    public ResponseEntity<CommentShortDto> getComment(@PathVariable(name = ID_COMMENT) long commentId) {
+    public ResponseEntity<CommentShortDto> getComment(@PathVariable(name = ID_EVENT) long eventId, @PathVariable(name = ID_COMMENT) long commentId) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(commentService.getComment(commentId));
+                .body(commentService.getCommentByEventId(eventId, commentId));
     }
 }

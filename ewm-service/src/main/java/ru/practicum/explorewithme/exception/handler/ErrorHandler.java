@@ -1,6 +1,7 @@
 package ru.practicum.explorewithme.exception.handler;
 
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +14,7 @@ import ru.practicum.explorewithme.exception.*;
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
+@Slf4j
 @SuppressWarnings("unused")
 public class ErrorHandler {
 
@@ -84,6 +86,7 @@ public class ErrorHandler {
     }
 
     private ResponseEntity<ApiError> createErrorResponse(String message, String reason, HttpStatus status) {
+        log.info("Произошла ошибка: {}", message);
         return ResponseEntity.status(status).body(
                 new ApiError(
                         message,

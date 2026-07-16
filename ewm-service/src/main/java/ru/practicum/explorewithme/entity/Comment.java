@@ -1,8 +1,7 @@
 package ru.practicum.explorewithme.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import ru.practicum.explorewithme.dto.comment.CommentStatus;
 import ru.practicum.explorewithme.dto.event.EventStatus;
 
@@ -11,6 +10,9 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "comments", schema = "public")
 public class Comment {
     @Id
