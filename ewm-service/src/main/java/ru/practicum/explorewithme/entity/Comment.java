@@ -22,9 +22,6 @@ public class Comment {
     @Column(name = "text")
     private String text;
 
-    @Column(name = "author_name")
-    private String authorName;
-
     @Column(name = "created")
     private LocalDateTime created;
 
