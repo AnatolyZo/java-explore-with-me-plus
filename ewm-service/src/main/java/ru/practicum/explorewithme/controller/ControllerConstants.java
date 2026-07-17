@@ -8,6 +8,8 @@ public class ControllerConstants {
     public static final String URL_EVENTS = "/events";
     public static final String URL_USERS = "/users";
     public static final String URL_REQUESTS = "/requests";
+    public static final String URL_COMMENTS = "/comments";
+    public static final String ID_COMMENT = "commentId";
     public static final String ID_CATEGORY = "catId";
     public static final String ID_COMPILATION = "compId";
     public static final String ID_EVENT = "eventId";
