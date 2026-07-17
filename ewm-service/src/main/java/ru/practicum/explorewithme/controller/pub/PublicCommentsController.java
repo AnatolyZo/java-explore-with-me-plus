@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.explorewithme.dto.category.CategoryDto;
+import ru.practicum.explorewithme.dto.comment.CommentDto;
 import ru.practicum.explorewithme.dto.comment.CommentShortDto;
 import ru.practicum.explorewithme.service.CommentService;
 
@@ -24,7 +25,7 @@ public class PublicCommentsController {
     private final CommentService commentService;
 
     @GetMapping
-    public ResponseEntity<List<CommentShortDto>> getComments(
+    public ResponseEntity<List<CommentDto>> getComments(
             @PathVariable @NotNull @Positive Long eventId,
             @RequestParam(name = PARAM_FROM, required = false, defaultValue = "0")
             @PositiveOrZero int from,
@@ -36,7 +37,7 @@ public class PublicCommentsController {
     }
 
     @GetMapping("/{" + ID_COMMENT + "}")
-    public ResponseEntity<CommentShortDto> getComment(@PathVariable(name = ID_EVENT) long eventId, @PathVariable(name = ID_COMMENT) long commentId) {
+    public ResponseEntity<CommentDto> getComment(@PathVariable(name = ID_EVENT) long eventId, @PathVariable(name = ID_COMMENT) long commentId) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(commentService.getCommentByEventId(eventId, commentId));
     }

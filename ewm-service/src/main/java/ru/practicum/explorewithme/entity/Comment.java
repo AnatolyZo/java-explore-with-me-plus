@@ -41,7 +41,7 @@ public class Comment {
     private CommentStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "moderator_id", nullable = false)
+    @JoinColumn(name = "moderator_id")
     private User moderator;
 
     @Column(name = "moderated")

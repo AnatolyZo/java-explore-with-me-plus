@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.explorewithme.dto.comment.CommentDto;
 import ru.practicum.explorewithme.dto.comment.CommentShortDto;
 import ru.practicum.explorewithme.entity.Comment;
 import ru.practicum.explorewithme.exception.Entities;
@@ -20,20 +21,20 @@ import java.util.List;
 public class CommentServiceImpl extends ServiceBase implements CommentService {
     private final CommentRepository commentRepository;
 
-    public CommentShortDto getCommentByEventId(long eventId, long commentId) {
+    public CommentDto getCommentByEventId(long eventId, long commentId) {
         log.trace("Инициировано получение комментария с id={}", commentId);
         Comment result = getCommentById(eventId, commentId);
         log.debug("Найден комментарий {}", result);
-        return CommentMapper.toCommitShortDto(result);
+        return CommentMapper.toCommentDto(result);
     }
 
     @Override
-    public List<CommentShortDto> getComments(long eventId, int from, int size) {
+    public List<CommentDto> getComments(long eventId, int from, int size) {
         log.trace("Иницировано получение комментариев с параметрами from={} и size={}", from, size);
         List<Comment> result = commentRepository.findByEventIdWithOffset(eventId, from, size);
         log.debug("Найдено {} категорий", result.size());
         return result.stream()
-                .map(CommentMapper::toCommitShortDto)
+                .map(CommentMapper::toCommentDto)
                 .toList();
     }
 

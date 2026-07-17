@@ -20,6 +20,8 @@ public class ErrorHandler {
 
     @ExceptionHandler
     public ResponseEntity<ApiError> methodArgumentNotValid(MethodArgumentNotValidException e) {
+        log.info("Произошла ошибка: {}", e);
+
         FieldError fieldError = e.getFieldError();
         if (fieldError == null) {
             return createErrorResponse("", "incorrect field value", HttpStatus.BAD_REQUEST);
@@ -38,41 +40,57 @@ public class ErrorHandler {
 
     @ExceptionHandler
     public ResponseEntity<ApiError> wrongInterval(WrongDateIntervalException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(e.getMessage(), "incorrect request", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> constraintViolation(ConstraintViolationException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(e.getMessage(), "incorrect field value", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> methodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(e.getMessage(), "incorrect field value", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> duplicatedData(DuplicatedDataException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(e.getMessage(), "duplicated data", HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> notFound(NotFoundException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse("required object was not found", e.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> notEmptyCategory(NotEmptyCategoryException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse("trying delete category with events", e.getMessage(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> unavailableEventUpdate(UnavailableUpdateException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(e.getMessage(), "update is unavailable", HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiError> unexpected(RuntimeException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(
                 e.getMessage(),
                 "unexpected error",
@@ -82,11 +100,12 @@ public class ErrorHandler {
 
     @ExceptionHandler
     public ResponseEntity<ApiError> earlyDate(EarlyDateException e) {
+        log.info("Произошла ошибка: {}", e);
+
         return createErrorResponse(e.getMessage(), "date is early", HttpStatus.BAD_REQUEST);
     }
 
     private ResponseEntity<ApiError> createErrorResponse(String message, String reason, HttpStatus status) {
-        log.info("Произошла ошибка: {}", message);
         return ResponseEntity.status(status).body(
                 new ApiError(
                         message,
