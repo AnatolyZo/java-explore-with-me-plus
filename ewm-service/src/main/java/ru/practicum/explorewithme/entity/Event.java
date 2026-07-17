@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "events", schema = "public")
 public class Event {
+    public Event(long id) {
+        this.id = id;
+    }
+
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
