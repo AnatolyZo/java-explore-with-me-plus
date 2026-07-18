@@ -1,8 +1,6 @@
 package ru.practicum.explorewithme.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.*;
 import ru.practicum.explorewithme.dto.comment.CommentStatus;
 
@@ -50,7 +48,5 @@ public class Comment {
 
     @Column(name = "moderated")
     private LocalDateTime moderated;
-
-    @Column(name = "moderation_reason")
-    private String moderationReason;
 }
+

@@ -6,7 +6,16 @@ import ru.practicum.explorewithme.dto.comment.ModerationAction;
 
 import java.util.List;
 
+import ru.practicum.explorewithme.entity.Comment;
+
 public interface CommentService {
+
+    List<CommentDto> getComments(long userId, int from, int size);
+
+    CommentDto getCommentByEventId(long eventId, long commentId);
+
+    Comment getCommentById(long eventId, long commentId);
+
     List<CommentDto> searchComments(long adminId,
                                     String text,
                                     List<Long> authorsIds,
