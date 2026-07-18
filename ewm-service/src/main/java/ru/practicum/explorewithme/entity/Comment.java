@@ -3,14 +3,17 @@ package ru.practicum.explorewithme.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.*;
 import ru.practicum.explorewithme.dto.comment.CommentStatus;
-import ru.practicum.explorewithme.dto.event.EventStatus;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "comments", schema = "public")
 public class Comment {
     @Id
@@ -20,8 +23,8 @@ public class Comment {
     @Column(name = "text")
     private String text;
 
-    @Column(name = "author_name")
-    private String authorName;
+    @Column(name = "text_on_moderation")
+    private String textOnModeration;
 
     @Column(name = "created")
     private LocalDateTime created;
@@ -42,13 +45,12 @@ public class Comment {
     private CommentStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "moderator_id", nullable = false)
+    @JoinColumn(name = "moderator_id")
     private User moderator;
 
     @Column(name = "moderated")
     private LocalDateTime moderated;
 
     @Column(name = "moderation_reason")
-    private String moderation_reason;
+    private String moderationReason;
 }
-
