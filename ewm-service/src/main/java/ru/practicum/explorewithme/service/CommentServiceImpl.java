@@ -5,13 +5,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.explorewithme.dto.comment.CommentDto;
-import ru.practicum.explorewithme.dto.comment.CommentShortDto;
 import ru.practicum.explorewithme.entity.Comment;
 import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.NotFoundException;
 import ru.practicum.explorewithme.mapper.CommentMapper;
 import ru.practicum.explorewithme.repository.CommentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
+import ru.practicum.explorewithme.dto.comment.CommentStatus;
+import ru.practicum.explorewithme.dto.comment.ModerationAction;
+import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.repository.UserRepository;
+import ru.practicum.explorewithme.repository.specification.AdminCommentSearchSpecification;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -20,6 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentServiceImpl extends ServiceBase implements CommentService {
     private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     public CommentDto getCommentByEventId(long eventId, long commentId) {
         log.trace("Инициировано получение комментария с id={}", commentId);
@@ -43,31 +53,6 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
         return commentRepository.findByIdAndEventId(commentId, eventId)
                 .orElseThrow(() -> new NotFoundException(Entities.COMMENT, commentId));
     }
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
-import ru.practicum.explorewithme.dto.comment.CommentDto;
-import ru.practicum.explorewithme.dto.comment.CommentStatus;
-import ru.practicum.explorewithme.dto.comment.ModerationAction;
-import ru.practicum.explorewithme.entity.Comment;
-import ru.practicum.explorewithme.entity.User;
-import ru.practicum.explorewithme.exception.Entities;
-import ru.practicum.explorewithme.mapper.CommentMapper;
-import ru.practicum.explorewithme.repository.CommentRepository;
-import ru.practicum.explorewithme.repository.UserRepository;
-import ru.practicum.explorewithme.repository.specification.AdminCommentSearchSpecification;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Service
-@RequiredArgsConstructor
-public class CommentServiceImpl extends ServiceBase implements CommentService {
-    private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
 
     @Override
     public List<CommentDto> searchComments(long adminId,

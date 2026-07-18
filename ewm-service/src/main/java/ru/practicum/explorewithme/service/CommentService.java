@@ -6,14 +6,7 @@ import ru.practicum.explorewithme.dto.comment.ModerationAction;
 
 import java.util.List;
 
-import ru.practicum.explorewithme.dto.category.CategoryDto;
-import ru.practicum.explorewithme.dto.category.NewCategoryDto;
-import ru.practicum.explorewithme.dto.category.UpdateCategoryDto;
-import ru.practicum.explorewithme.dto.comment.CommentDto;
-import ru.practicum.explorewithme.dto.comment.CommentShortDto;
 import ru.practicum.explorewithme.entity.Comment;
-
-import java.util.List;
 
 public interface CommentService {
 
@@ -22,6 +15,7 @@ public interface CommentService {
     CommentDto getCommentByEventId(long eventId, long commentId);
 
     Comment getCommentById(long eventId, long commentId);
+
     List<CommentDto> searchComments(long adminId,
                                     String text,
                                     List<Long> authorsIds,

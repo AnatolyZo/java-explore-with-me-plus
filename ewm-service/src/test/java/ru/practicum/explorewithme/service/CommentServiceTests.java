@@ -40,10 +40,10 @@ public class CommentServiceTests {
     @Mock
     private UserRepository userRepository;
 
-    private final long ADMIN_ID = 1L;
-    private final long COMMENT_ID = 2L;
-    private final long EVENT_ID = 3L;
-    private final long AUTHOR_ID = 4L;
+    private static final long ADMIN_ID = 1L;
+    private static final long COMMENT_ID = 2L;
+    private static final long EVENT_ID = 3L;
+    private static final long AUTHOR_ID = 4L;
 
     private User admin;
     private User author;
