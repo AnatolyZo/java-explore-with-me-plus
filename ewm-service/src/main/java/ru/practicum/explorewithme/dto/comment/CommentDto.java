@@ -1,12 +1,9 @@
 package ru.practicum.explorewithme.dto.comment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import ru.practicum.explorewithme.entity.Event;
-import ru.practicum.explorewithme.entity.User;
 
 import java.time.LocalDateTime;
 
@@ -18,13 +15,13 @@ public class CommentDto {
     private String text;
     private LocalDateTime created;
     private LocalDateTime updated;
-    private long event_id;
-    private long author_id;
+    private long eventId;
+    private long authorId;
 
     @JsonProperty("state")
     private CommentStatus status;
 
-    private long moderator_id;
+    private long moderatorId;
     private LocalDateTime moderated;
-    private String moderation_reason;
+    private String moderationReason;
 }

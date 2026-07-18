@@ -22,6 +22,9 @@ public class Comment {
     @Column(name = "text")
     private String text;
 
+    @Column(name = "text_on_moderation")
+    private String textOnModeration;
+
     @Column(name = "created")
     private LocalDateTime created;
 
@@ -48,6 +51,6 @@ public class Comment {
     private LocalDateTime moderated;
 
     @Column(name = "moderation_reason")
-    private String moderation_reason;
+    private String moderationReason;
 }
 
