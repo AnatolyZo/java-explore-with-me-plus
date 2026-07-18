@@ -18,6 +18,7 @@ import static ru.practicum.explorewithme.controller.ControllerConstants.*;
 @RequiredArgsConstructor
 public class AdminCommentController {
     private final CommentService commentService;
+    private static final String ADMIN_HEADER = "X-EWV-Admin-Id";
 
     @GetMapping
     public ResponseEntity<List<CommentDto>> searchComments(@RequestHeader("X-EWV-Admin-Id") long adminId,
@@ -34,7 +35,7 @@ public class AdminCommentController {
     }
 
     @PatchMapping("/{" + ID_COMMENT + "}")
-    public ResponseEntity<CommentDto> moderateComment(@RequestHeader("X-EWV-Admin-Id") long adminId,
+    public ResponseEntity<CommentDto> moderateComment(@RequestHeader(ADMIN_HEADER) long adminId,
                                                       @PathVariable long commentId,
                                                       @RequestParam ModerationAction action) {
         return ResponseEntity.status(HttpStatus.OK)
@@ -42,7 +43,7 @@ public class AdminCommentController {
     }
 
     @DeleteMapping("/{" + ID_COMMENT + "}")
-    public ResponseEntity<Void> deleteComment(@RequestHeader("X-EWV-Admin-Id") long adminId,
+    public ResponseEntity<Void> deleteComment(@RequestHeader(ADMIN_HEADER) long adminId,
                                               @PathVariable long commentId) {
         commentService.deleteComment(adminId, commentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)

@@ -19,5 +19,5 @@ public interface CommentService {
 
     CommentDto moderateComment(long adminId, long commentId, ModerationAction action);
 
-    void deleteComment(long adminId, long commentId);
+    void deleteComment(long userId, long commentId);
 }

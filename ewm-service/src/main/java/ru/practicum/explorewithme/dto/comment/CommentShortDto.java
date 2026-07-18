@@ -20,6 +20,6 @@ public class CommentShortDto {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updated;
 
-    private long event_id;
-    private long author_id;
+    private long eventId;
+    private long authorId;
 }
