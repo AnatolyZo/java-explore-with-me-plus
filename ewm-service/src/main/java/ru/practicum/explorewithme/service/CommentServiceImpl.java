@@ -4,19 +4,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.explorewithme.dto.comment.CommentDto;
+import ru.practicum.explorewithme.dto.comment.*;
 import ru.practicum.explorewithme.entity.Comment;
+import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.exception.Entities;
 import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.mapper.CommentMapper;
 import ru.practicum.explorewithme.repository.CommentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
-import ru.practicum.explorewithme.dto.comment.CommentStatus;
-import ru.practicum.explorewithme.dto.comment.ModerationAction;
 import ru.practicum.explorewithme.entity.User;
+import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.UserRepository;
 import ru.practicum.explorewithme.repository.specification.AdminCommentSearchSpecification;
 
@@ -30,21 +31,22 @@ import java.util.List;
 public class CommentServiceImpl extends ServiceBase implements CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
-    public CommentDto getCommentByEventId(long eventId, long commentId) {
+    public CommentShortDto getCommentByEventId(long eventId, long commentId) {
         log.trace("Инициировано получение комментария с id={}", commentId);
         Comment result = getCommentById(eventId, commentId);
         log.debug("Найден комментарий {}", result);
-        return CommentMapper.toCommentDto(result);
+        return CommentMapper.toCommentShortDto(result);
     }
 
     @Override
-    public List<CommentDto> getComments(long eventId, int from, int size) {
+    public List<CommentShortDto> getComments(long eventId, int from, int size) {
         log.trace("Иницировано получение комментариев с параметрами from={} и size={}", from, size);
         List<Comment> result = commentRepository.findByEventIdWithOffset(eventId, from, size);
         log.debug("Найдено {} категорий", result.size());
         return result.stream()
-                .map(CommentMapper::toCommentDto)
+                .map(CommentMapper::toCommentShortDto)
                 .toList();
     }
 
@@ -83,13 +85,21 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
 
         if (action.equals(ModerationAction.APPROVE)) {
+            LocalDateTime now = LocalDateTime.now();
             comment.setText(comment.getTextOnModeration());
             comment.setModerator(admin);
-            comment.setModerated(LocalDateTime.now());
+            comment.setUpdated(now);
+            comment.setModerated(now);
+            comment.setStatus(CommentStatus.APPROVED);
+        }
+
+        if (action.equals(ModerationAction.REJECT) && comment.getText() == null) {
+            comment.setStatus(CommentStatus.REJECTED);
+        } else if (action.equals(ModerationAction.REJECT) && comment.getText() != null) {
+            comment.setStatus(CommentStatus.APPROVED);
         }
 
         comment.setTextOnModeration(null);
-        comment.setStatus(CommentStatus.APPROVED);
         commentRepository.save(comment);
 
         return CommentMapper.toCommentDto(comment);
@@ -99,5 +109,53 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     public void deleteComment(long adminId, long commentId) {
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
         commentRepository.delete(comment);
+    }
+
+    @Override
+    public List<CommentShortDto> getUsersComments(long userId) {
+        checkUserExistence(userId);
+
+        List<Comment> commentsList = commentRepository.findByAuthorId(userId);
+        return commentsList.stream()
+                .map(CommentMapper::toCommentShortDto)
+                .toList();
+    }
+
+    @Override
+    public CommentShortDto createComment(long userId, long eventId, NewCommentDto body) {
+        User author = findEntityIn(userRepository, userId, Entities.USER);
+        Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
+        Comment comment = CommentMapper.toComment(body);
+        setFieldsOnCreation(comment, event, author);
+        Comment createdComment = commentRepository.save(comment);
+        return CommentMapper.toCommentShortDto(createdComment);
+    }
+
+    @Override
+    public CommentShortDto updateComment(long userId, long commentId, UpdateCommentDto body) {
+        checkUserExistence(userId);
+        Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
+        if (comment.getAuthor().getId() != userId) {
+            throw new UnavailableUpdateException(Entities.COMMENT.name(), commentId);
+        }
+
+        comment.setTextOnModeration(body.getText());
+        comment.setStatus(CommentStatus.PENDING);
+        Comment updatedComment = commentRepository.save(comment);
+        return CommentMapper.toCommentShortDto(updatedComment);
+    }
+
+    private void setFieldsOnCreation(Comment comment, Event event, User author) {
+        comment.setCreated(LocalDateTime.now());
+        comment.setEvent(event);
+        comment.setAuthor(author);
+        comment.setStatus(CommentStatus.PENDING);
+    }
+
+    private void checkUserExistence(long userId) {
+        boolean isUserExists = userRepository.existsById(userId);
+        if (!isUserExists) {
+            throw new NotFoundException(Entities.USER, userId);
+        }
     }
 }

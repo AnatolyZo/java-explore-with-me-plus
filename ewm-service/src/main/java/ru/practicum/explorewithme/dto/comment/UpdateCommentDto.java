@@ -8,7 +8,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
-public class NewCommentDto {
+public class UpdateCommentDto {
     @NotBlank
     private String text;
 }

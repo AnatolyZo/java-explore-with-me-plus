@@ -30,7 +30,6 @@ import static ru.practicum.explorewithme.controller.ControllerConstants.URL_EVEN
 
 @Slf4j
 public class ServiceBase {
-    /// Убрал первый параметр из NFE чтобы не усложнять метод
     protected <E> E findEntityIn(JpaRepository<E, Long> repository, long id, Entities entity) {
         return repository.findById(id)
                 .orElseThrow(() -> new NotFoundException(entity, id));

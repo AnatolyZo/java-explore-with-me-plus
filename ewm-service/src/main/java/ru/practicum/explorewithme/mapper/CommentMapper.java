@@ -28,14 +28,12 @@ public class CommentMapper {
                 .status(comment.getStatus())
                 .moderatorId(comment.getModerator().getId())
                 .moderated(comment.getModerated())
-                .moderationReason(comment.getModerationReason())
                 .build();
     }
 
     public static Comment toComment(NewCommentDto dto) {
-
         return Comment.builder()
-                .text(dto.getText())
+                .textOnModeration(dto.getText())
                 .build();
     }
 }
