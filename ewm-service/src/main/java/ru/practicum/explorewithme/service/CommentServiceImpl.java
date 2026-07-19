@@ -23,6 +23,10 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
 
     public CommentDto getCommentByEventId(long eventId, long commentId) {
         log.trace("Инициировано получение комментария с id={}", commentId);
+
+        raiseExceptionIfNegative(eventId);
+        raiseExceptionIfNegative(commentId);
+
         Comment result = getCommentById(eventId, commentId);
         log.debug("Найден комментарий {}", result);
         return CommentMapper.toCommentDto(result);
@@ -30,6 +34,8 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
 
     @Override
     public List<CommentDto> getComments(long eventId, int from, int size) {
+        raiseExceptionIfNegative(eventId);
+
         log.trace("Иницировано получение комментариев с параметрами from={} и size={}", from, size);
         List<Comment> result = commentRepository.findByEventIdWithOffset(eventId, from, size);
         log.debug("Найдено {} категорий", result.size());
@@ -42,5 +48,11 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     public Comment getCommentById(long eventId, long commentId) {
         return commentRepository.findByIdAndEventId(commentId, eventId)
                 .orElseThrow(() -> new NotFoundException(Entities.COMMENT, commentId));
+    }
+
+    private void raiseExceptionIfNegative(long value) {
+        if (value <= 0L) {
+            throw new RuntimeException("Идентификатор равен нулю или отрицательное значение.");
+        }
     }
 }
