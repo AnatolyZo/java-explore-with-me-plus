@@ -1,15 +1,15 @@
 package ru.practicum.explorewithme.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import ru.practicum.explorewithme.entity.Category;
 import ru.practicum.explorewithme.entity.Comment;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CommentRepository extends JpaRepository<Comment, Long> {
+public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpecificationExecutor<Comment> {
 
     @Query(value = """
             SELECT *
@@ -20,7 +20,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             ROWS FETCH NEXT :size ROWS ONLY
             """,
             nativeQuery = true)
-    List<Comment> findByEventIdWithOffset(@Param("event_id") long event_id, @Param("from") int from, @Param("size") int size);
+    List<Comment> findByEventIdWithOffset(@Param("event_id") long eventId, @Param("from") int from, @Param("size") int size);
 
     Optional<Comment> findByIdAndEventId(long commentId, long eventId);
 }
