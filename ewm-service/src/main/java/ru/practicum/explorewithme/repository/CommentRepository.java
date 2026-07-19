@@ -23,4 +23,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpec
     List<Comment> findByEventIdWithOffset(@Param("event_id") long eventId, @Param("from") int from, @Param("size") int size);
 
     Optional<Comment> findByIdAndEventId(long commentId, long eventId);
+
+    List<Comment> findByAuthorId(long authorId);
 }

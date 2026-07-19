@@ -1,8 +1,6 @@
 package ru.practicum.explorewithme.service;
 
-import ru.practicum.explorewithme.dto.comment.CommentDto;
-import ru.practicum.explorewithme.dto.comment.CommentStatus;
-import ru.practicum.explorewithme.dto.comment.ModerationAction;
+import ru.practicum.explorewithme.dto.comment.*;
 
 import java.util.List;
 
@@ -10,9 +8,9 @@ import ru.practicum.explorewithme.entity.Comment;
 
 public interface CommentService {
 
-    List<CommentDto> getComments(long userId, int from, int size);
+    List<CommentShortDto> getComments(long userId, int from, int size);
 
-    CommentDto getCommentByEventId(long eventId, long commentId);
+    CommentShortDto getCommentByEventId(long eventId, long commentId);
 
     Comment getCommentById(long eventId, long commentId);
 
@@ -29,4 +27,10 @@ public interface CommentService {
     CommentDto moderateComment(long adminId, long commentId, ModerationAction action);
 
     void deleteComment(long userId, long commentId);
+
+    List<CommentShortDto> getUsersComments(long userId);
+
+    CommentShortDto createComment(long userId, long eventId, NewCommentDto newCommentDto);
+
+    CommentShortDto updateComment(long userId, long commentId, UpdateCommentDto updateCommentDto);
 }

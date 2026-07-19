@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.explorewithme.dto.comment.CommentDto;
+import ru.practicum.explorewithme.dto.comment.CommentShortDto;
 import ru.practicum.explorewithme.dto.comment.CommentStatus;
 import ru.practicum.explorewithme.entity.Comment;
 import ru.practicum.explorewithme.entity.Event;
@@ -41,7 +42,7 @@ class CommentServiceImplTest {
         when(commentRepository.findByIdAndEventId(commentId, eventId))
                 .thenReturn(Optional.of(comment));
 
-        CommentDto result = commentService.getCommentByEventId(eventId, commentId);
+        CommentShortDto result = commentService.getCommentByEventId(eventId, commentId);
 
         assertNotNull(result);
         assertEquals(commentId, result.getId());
@@ -82,7 +83,7 @@ class CommentServiceImplTest {
         when(commentRepository.findByEventIdWithOffset(eventId, from, size))
                 .thenReturn(List.of(firstComment, secondComment));
 
-        List<CommentDto> result = commentService.getComments(eventId, from, size);
+        List<CommentShortDto> result = commentService.getComments(eventId, from, size);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -107,7 +108,7 @@ class CommentServiceImplTest {
         when(commentRepository.findByEventIdWithOffset(eventId, from, size))
                 .thenReturn(List.of());
 
-        List<CommentDto> result = commentService.getComments(eventId, from, size);
+        List<CommentShortDto> result = commentService.getComments(eventId, from, size);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());

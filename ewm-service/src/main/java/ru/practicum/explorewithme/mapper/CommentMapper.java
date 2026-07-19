@@ -32,9 +32,8 @@ public class CommentMapper {
     }
 
     public static Comment toComment(NewCommentDto dto) {
-
         return Comment.builder()
-                .text(dto.getText())
+                .textOnModeration(dto.getText())
                 .build();
     }
 }

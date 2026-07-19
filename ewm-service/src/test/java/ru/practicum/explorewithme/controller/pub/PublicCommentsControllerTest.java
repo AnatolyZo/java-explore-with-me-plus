@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.explorewithme.dto.comment.CommentDto;
+import ru.practicum.explorewithme.dto.comment.CommentShortDto;
 import ru.practicum.explorewithme.dto.comment.CommentStatus;
 import ru.practicum.explorewithme.service.CommentService;
 
@@ -41,14 +41,14 @@ class PublicCommentsControllerTest {
         int from = 0;
         int size = 10;
 
-        CommentDto firstComment = makeCommentDto(
+        CommentShortDto firstComment = makeCommentDto(
                 1L,
                 "Первый комментарий",
                 eventId,
                 100L
         );
 
-        CommentDto secondComment = makeCommentDto(
+        CommentShortDto secondComment = makeCommentDto(
                 2L,
                 "Второй комментарий",
                 eventId,
@@ -67,11 +67,9 @@ class PublicCommentsControllerTest {
 
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].text").value("Первый комментарий"))
-                .andExpect(jsonPath("$[0].state").value("PENDING"))
 
                 .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].text").value("Второй комментарий"))
-                .andExpect(jsonPath("$[1].state").value("PENDING"));
+                .andExpect(jsonPath("$[1].text").value("Второй комментарий"));
 
         verify(commentService).getComments(eventId, from, size);
     }
@@ -81,7 +79,7 @@ class PublicCommentsControllerTest {
     void getComments_withoutPaginationParams_shouldUseDefaultValues() throws Exception {
         long eventId = 1L;
 
-        CommentDto comment = makeCommentDto(
+        CommentShortDto comment = makeCommentDto(
                 1L,
                 "Комментарий",
                 eventId,
@@ -95,8 +93,7 @@ class PublicCommentsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].text").value("Комментарий"))
-                .andExpect(jsonPath("$[0].state").value("PENDING"));
+                .andExpect(jsonPath("$[0].text").value("Комментарий"));
 
         verify(commentService).getComments(eventId, 0, 10);
     }
@@ -107,7 +104,7 @@ class PublicCommentsControllerTest {
         long eventId = 1L;
         long commentId = 10L;
 
-        CommentDto comment = makeCommentDto(
+        CommentShortDto comment = makeCommentDto(
                 commentId,
                 "Один комментарий",
                 eventId,
@@ -121,8 +118,7 @@ class PublicCommentsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.id").value(commentId))
-                .andExpect(jsonPath("$.text").value("Один комментарий"))
-                .andExpect(jsonPath("$.state").value("PENDING"));
+                .andExpect(jsonPath("$.text").value("Один комментарий"));
 
         verify(commentService).getCommentByEventId(eventId, commentId);
     }
@@ -182,14 +178,12 @@ class PublicCommentsControllerTest {
         verifyNoInteractions(commentService);
     }
 
-    private CommentDto makeCommentDto(long id, String text, long eventId, long authorId) {
-        return CommentDto.builder()
+    private CommentShortDto makeCommentDto(long id, String text, long eventId, long authorId) {
+        return CommentShortDto.builder()
                 .id(id)
                 .text(text)
                 .created(LocalDateTime.of(2024, 1, 1, 12, 0))
                 .updated(LocalDateTime.of(2024, 1, 1, 13, 0))
-                .status(CommentStatus.PENDING)
-                .moderated(LocalDateTime.of(2024, 1, 1, 14, 0))
                 .build();
     }
 }
