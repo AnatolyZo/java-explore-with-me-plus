@@ -45,7 +45,7 @@ public class AdminCommentController {
     @DeleteMapping("/{" + ID_COMMENT + "}")
     public ResponseEntity<Void> deleteComment(@RequestHeader(ADMIN_HEADER) long adminId,
                                               @PathVariable long commentId) {
-        commentService.deleteComment(adminId, commentId);
+        commentService.deleteCommentByAdmin(adminId, commentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)
                 .body(null);
     }

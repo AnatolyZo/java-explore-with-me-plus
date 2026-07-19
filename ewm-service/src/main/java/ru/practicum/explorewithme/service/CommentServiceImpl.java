@@ -26,13 +26,14 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CommentServiceImpl extends ServiceBase implements CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
+    @Override
     public CommentShortDto getCommentByEventId(long eventId, long commentId) {
         log.trace("Инициировано получение комментария с id={}", commentId);
         Comment result = getCommentById(eventId, commentId);
@@ -50,8 +51,7 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
                 .toList();
     }
 
-    @Override
-    public Comment getCommentById(long eventId, long commentId) {
+    private Comment getCommentById(long eventId, long commentId) {
         return commentRepository.findByIdAndEventId(commentId, eventId)
                 .orElseThrow(() -> new NotFoundException(Entities.COMMENT, commentId));
     }
@@ -80,16 +80,15 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     }
 
     @Override
+    @Transactional
     public CommentDto moderateComment(long adminId, long commentId, ModerationAction action) {
+        LocalDateTime now = LocalDateTime.now();
         User admin = findEntityIn(userRepository, adminId, Entities.USER);
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
 
         if (action.equals(ModerationAction.APPROVE)) {
-            LocalDateTime now = LocalDateTime.now();
             comment.setText(comment.getTextOnModeration());
-            comment.setModerator(admin);
             comment.setUpdated(now);
-            comment.setModerated(now);
             comment.setStatus(CommentStatus.APPROVED);
         }
 
@@ -99,6 +98,8 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
             comment.setStatus(CommentStatus.APPROVED);
         }
 
+        comment.setModerator(admin);
+        comment.setModerated(now);
         comment.setTextOnModeration(null);
         commentRepository.save(comment);
 
@@ -106,8 +107,17 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     }
 
     @Override
-    public void deleteComment(long adminId, long commentId) {
+    @Transactional
+    public void deleteCommentByAdmin(long adminId, long commentId) {
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
+        commentRepository.delete(comment);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCommentByUser(long userId, long commentId) {
+        Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
+        checkCommentAuthorship(comment, userId);
         commentRepository.delete(comment);
     }
 
@@ -122,6 +132,7 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     }
 
     @Override
+    @Transactional
     public CommentShortDto createComment(long userId, long eventId, NewCommentDto body) {
         User author = findEntityIn(userRepository, userId, Entities.USER);
         Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
@@ -132,13 +143,11 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     }
 
     @Override
+    @Transactional
     public CommentShortDto updateComment(long userId, long commentId, UpdateCommentDto body) {
         checkUserExistence(userId);
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
-        if (comment.getAuthor().getId() != userId) {
-            throw new UnavailableUpdateException(Entities.COMMENT.name(), commentId);
-        }
-
+        checkCommentAuthorship(comment, userId);
         comment.setTextOnModeration(body.getText());
         comment.setStatus(CommentStatus.PENDING);
         Comment updatedComment = commentRepository.save(comment);
@@ -156,6 +165,12 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
         boolean isUserExists = userRepository.existsById(userId);
         if (!isUserExists) {
             throw new NotFoundException(Entities.USER, userId);
+        }
+    }
+
+    private void checkCommentAuthorship(Comment comment, long userId) {
+        if (comment.getAuthor().getId() != userId) {
+            throw new UnavailableUpdateException(Entities.COMMENT.name(), comment.getId());
         }
     }
 }

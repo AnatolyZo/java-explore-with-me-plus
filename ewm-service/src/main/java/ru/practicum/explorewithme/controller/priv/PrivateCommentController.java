@@ -43,7 +43,7 @@ public class PrivateCommentController {
 
     @DeleteMapping(URL_COMMENTS + "/{" + ID_COMMENT + "}")
     public ResponseEntity<Void> deleteComment(@PathVariable long userId, @PathVariable long commentId) {
-        commentService.deleteComment(userId, commentId);
+        commentService.deleteCommentByUser(userId, commentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)
                 .body(null);
     }

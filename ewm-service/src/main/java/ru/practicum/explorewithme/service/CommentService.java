@@ -4,15 +4,10 @@ import ru.practicum.explorewithme.dto.comment.*;
 
 import java.util.List;
 
-import ru.practicum.explorewithme.entity.Comment;
-
 public interface CommentService {
-
     List<CommentShortDto> getComments(long userId, int from, int size);
 
     CommentShortDto getCommentByEventId(long eventId, long commentId);
-
-    Comment getCommentById(long eventId, long commentId);
 
     List<CommentDto> searchComments(long adminId,
                                     String text,
@@ -26,7 +21,9 @@ public interface CommentService {
 
     CommentDto moderateComment(long adminId, long commentId, ModerationAction action);
 
-    void deleteComment(long userId, long commentId);
+    void deleteCommentByAdmin(long adminId, long commentId);
+
+    void deleteCommentByUser(long userId, long commentId);
 
     List<CommentShortDto> getUsersComments(long userId);
 
