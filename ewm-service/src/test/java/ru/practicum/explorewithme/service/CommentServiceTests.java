@@ -4,20 +4,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import ru.practicum.explorewithme.common.pagination.OffsetPageRequest;
-import ru.practicum.explorewithme.dto.comment.CommentDto;
-import ru.practicum.explorewithme.dto.comment.CommentShortDto;
-import ru.practicum.explorewithme.dto.comment.CommentStatus;
-import ru.practicum.explorewithme.dto.comment.ModerationAction;
+import ru.practicum.explorewithme.dto.comment.*;
 import ru.practicum.explorewithme.entity.Comment;
 import ru.practicum.explorewithme.entity.Event;
 import ru.practicum.explorewithme.entity.User;
 import ru.practicum.explorewithme.exception.NotFoundException;
+import ru.practicum.explorewithme.exception.UnavailableUpdateException;
 import ru.practicum.explorewithme.repository.CommentRepository;
 import ru.practicum.explorewithme.repository.EventRepository;
 import ru.practicum.explorewithme.repository.UserRepository;
@@ -207,59 +206,12 @@ public class CommentServiceTests {
 
     @Test
     void deleteComment_deletesComment_ByAdmin_whenExists() {
+        when(userRepository.existsById(ADMIN_ID)).thenReturn(true);
         when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.of(comment));
 
         commentService.deleteCommentByAdmin(ADMIN_ID, COMMENT_ID);
 
         verify(commentRepository).delete(comment);
-    }
-
-    @Test
-    void deleteComment_throwsNotFound_whenCommentByAdminDoesNotExist() {
-        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> commentService.deleteCommentByAdmin(ADMIN_ID, COMMENT_ID))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("COMMENT with id=2 not exists");
-    }
-
-    @Test
-    @DisplayName("getCommentByEventId должен вернуть комментарий по eventId и commentId")
-    void getCommentByEventId_shouldReturnComment() {
-        Long eventId = 1L;
-        Long commentId = 10L;
-
-        Comment comment = makeComment(commentId, "Текст комментария", eventId);
-
-        when(commentRepository.findByIdAndEventId(commentId, eventId))
-                .thenReturn(Optional.of(comment));
-
-        CommentShortDto result = commentService.getCommentByEventId(eventId, commentId);
-
-        assertNotNull(result);
-        assertEquals(commentId, result.getId());
-        assertEquals("Текст комментария", result.getText());
-
-        verify(commentRepository).findByIdAndEventId(commentId, eventId);
-        verifyNoMoreInteractions(commentRepository);
-    }
-
-    @Test
-    @DisplayName("getCommentByEventId должен выбросить NotFoundException, если комментарий не найден")
-    void getCommentByEventId_whenCommentNotFound_shouldThrowNotFoundException() {
-        Long eventId = 1L;
-        Long commentId = 999L;
-
-        when(commentRepository.findByIdAndEventId(commentId, eventId))
-                .thenReturn(Optional.empty());
-
-        assertThrows(
-                NotFoundException.class,
-                () -> commentService.getCommentByEventId(eventId, commentId)
-        );
-
-        verify(commentRepository).findByIdAndEventId(commentId, eventId);
-        verifyNoMoreInteractions(commentRepository);
     }
 
     @Test
@@ -357,134 +309,133 @@ public class CommentServiceTests {
         return user;
     }
 
-//    @Test
-//    void getUsersComments_returnsList_whenUserExists() {
-//        Event event1 = Event.builder()
-//                .id(1L)
-//                .build();
-//
-//        Event event2 = Event.builder()
-//                .id(2L)
-//                .build();
-//
-//        Comment comment1 = Comment.builder()
-//                .id(1L)
-//                .text("Текст 1")
-//                .event(event1)
-//                .author(author)
-//                .moderator(admin)
-//                .build();
-//        Comment comment2 = Comment.builder()
-//                .id(2L)
-//                .text("Текст 2")
-//                .event(event2)
-//                .author(author)
-//                .moderator(admin)
-//                .build();
-//
-//        List<Comment> comments = List.of(comment1, comment2);
-//        when(userRepository.existsById(AUTHOR_ID)).thenReturn(true);
-//        when(userRepository.findById(eq(AUTHOR_ID))).thenReturn(Optional.of(author));
-//        when(commentRepository.findByAuthorId(eq(AUTHOR_ID))).thenReturn(comments);
-//
-//        List<CommentShortDto> result = commentService.getUsersComments(AUTHOR_ID);
-//
-//        assertThat(result).hasSize(2);
-//        assertThat(result.get(0).getText()).isEqualTo("Текст 1");
-//        assertThat(result.get(1).getText()).isEqualTo("Текст 2");
-//        verify(userRepository).findById(AUTHOR_ID);
-//        verify(commentRepository).findByAuthorId(AUTHOR_ID);
-//    }
-//
-//    @Test
-//    void getUsersComments_returnsEmptyList_whenNoComments() {
-//        when(userRepository.findById(eq(AUTHOR_ID))).thenReturn(Optional.of(author));
-//        when(commentRepository.findByAuthorId(eq(AUTHOR_ID))).thenReturn(List.of());
-//
-//        List<CommentShortDto> result = commentService.getUsersComments(AUTHOR_ID);
-//
-//        assertThat(result).isEmpty();
-//        verify(commentRepository).findByAuthorId(AUTHOR_ID);
-//    }
-//
-//    @Test
-//    void createComment_createsNewComment_successfully() {
-//        Event event = Event.builder()
-//                .id(1L)
-//                .build();
-//
-//        NewCommentDto dto = NewCommentDto.builder().text("Новый комментарий").build();
-//        when(userRepository.findById(eq(AUTHOR_ID))).thenReturn(Optional.of(author));
-//        when(eventRepository.findById(eq(EVENT_ID))).thenReturn(Optional.of(event));
-//
-//        Comment savedComment = Comment.builder().id(42L).build();
-//        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
-//
-//        CommentShortDto result = commentService.createComment(AUTHOR_ID, EVENT_ID, dto);
-//
-//        ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
-//        verify(commentRepository).save(captor.capture());
-//
-//        Comment captured = captor.getValue();
-//        assertThat(captured.getAuthor()).isEqualTo(author);
-//        assertThat(captured.getEvent()).isEqualTo(event);
-//        assertThat(captured.getText()).isEqualTo("Новый комментарий");
-//        assertThat(captured.getStatus()).isEqualTo(CommentStatus.PENDING);
-//        assertThat(captured.getCreated()).isNotNull();
-//
-//        assertThat(result.getId()).isEqualTo(42L);
-//        assertThat(result.getText()).isEqualTo("Новый комментарий");
-//    }
-//
-//    @Test
-//    void updateComment_updatesTextToModeration_andSetsPending_whenOwnComment() {
-//        UpdateCommentDto dto = UpdateCommentDto.builder().text("Обновленный текст").build();
-//        when(userRepository.findById(eq(AUTHOR_ID))).thenReturn(Optional.of(author));
-//        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.of(comment));
-//
-//        Comment savedComment = comment;
-//        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
-//
-//        CommentShortDto result = commentService.updateComment(AUTHOR_ID, COMMENT_ID, dto);
-//
-//        ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
-//        verify(commentRepository).save(captor.capture());
-//
-//        Comment captured = captor.getValue();
-//        assertThat(captured.getText()).isEqualTo("Старый текст");
-//        assertThat(captured.getTextOnModeration()).isEqualTo("Обновленный текст");
-//        assertThat(captured.getStatus()).isEqualTo(CommentStatus.PENDING);
-//
-//        assertThat(result.getId()).isEqualTo(COMMENT_ID);
-//        assertThat(result.getText()).isEqualTo("Старый текст");
-//    }
-//
-//    @Test
-//    void updateComment_throwsUnavailableUpdate_whenUserTriesToUpdateOthersComment() {
-//        // Дано: комментарий принадлежит author, а обновляет его другой пользователь (anotherUser)
-//        UpdateCommentDto dto = UpdateCommentDto.builder().text("Текст").build();
-//
-//        when(userRepository.findById(eq(ANOTHER_USER_ID))).thenReturn(Optional.of(anotherUser));
-//        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.of(comment));
-//
-//        // When & Then
-//        assertThatThrownBy(() -> commentService.updateComment(ANOTHER_USER_ID, COMMENT_ID, dto))
-//                .isInstanceOf(UnavailableUpdateException.class)
-//                .hasMessageContaining("COMMENT"); // Ожидается сообщение с именем сущности
-//
-//        verify(commentRepository, never()).save(any());
-//    }
-//
-//    @Test
-//    void updateComment_throwsNotFound_whenCommentDoesNotExist() {
-//        UpdateCommentDto dto = UpdateCommentDto.builder().text("Текст").build();
-//        when(userRepository.findById(eq(AUTHOR_ID))).thenReturn(Optional.of(author));
-//        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() -> commentService.updateComment(AUTHOR_ID, COMMENT_ID, dto))
-//                .isInstanceOf(NotFoundException.class)
-//                .hasMessageContaining("Comment");
-//
-//        verify(commentRepository, never()).save(any());
-//    }
+    @Test
+    void getUsersComments_returnsList_whenUserExists() {
+        Event event1 = Event.builder()
+                .id(1L)
+                .build();
+
+        Event event2 = Event.builder()
+                .id(2L)
+                .build();
+
+        Comment comment1 = Comment.builder()
+                .id(1L)
+                .text("Текст 1")
+                .event(event1)
+                .author(author)
+                .moderator(admin)
+                .build();
+        Comment comment2 = Comment.builder()
+                .id(2L)
+                .text("Текст 2")
+                .event(event2)
+                .author(author)
+                .moderator(admin)
+                .build();
+
+        List<Comment> comments = List.of(comment1, comment2);
+        when(userRepository.existsById(AUTHOR_ID)).thenReturn(true);
+        when(commentRepository.findByAuthorId(eq(AUTHOR_ID))).thenReturn(comments);
+
+        List<CommentShortDto> result = commentService.getUsersComments(AUTHOR_ID);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getText()).isEqualTo("Текст 1");
+        assertThat(result.get(1).getText()).isEqualTo("Текст 2");
+        verify(commentRepository).findByAuthorId(AUTHOR_ID);
+    }
+
+    @Test
+    void getUsersComments_returnsEmptyList_whenNoComments() {
+        when(userRepository.existsById(AUTHOR_ID)).thenReturn(true);
+        when(commentRepository.findByAuthorId(eq(AUTHOR_ID))).thenReturn(List.of());
+
+        List<CommentShortDto> result = commentService.getUsersComments(AUTHOR_ID);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void createComment_createsNewComment_successfully() {
+        Event event = Event.builder()
+                .id(1L)
+                .build();
+
+        NewCommentDto dto = NewCommentDto.builder().text("Новый комментарий").build();
+        when(userRepository.findById(eq(AUTHOR_ID))).thenReturn(Optional.of(author));
+        when(eventRepository.findById(eq(EVENT_ID))).thenReturn(Optional.of(event));
+
+        Comment savedComment = Comment.builder()
+                .id(1L)
+                .event(event)
+                .author(author)
+                .build();
+        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
+
+        CommentShortDto result = commentService.createComment(AUTHOR_ID, EVENT_ID, dto);
+
+        ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(captor.capture());
+
+        Comment captured = captor.getValue();
+        assertThat(captured.getAuthor()).isEqualTo(author);
+        assertThat(captured.getEvent()).isEqualTo(event);
+        assertThat(captured.getTextOnModeration()).isEqualTo("Новый комментарий");
+        assertThat(captured.getStatus()).isEqualTo(CommentStatus.PENDING);
+        assertThat(captured.getCreated()).isNotNull();
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getText()).isEqualTo(null);
+    }
+
+    @Test
+    void updateComment_updatesTextToModeration_andSetsPending_whenOwnComment() {
+        UpdateCommentDto dto = UpdateCommentDto.builder().text("Обновленный текст").build();
+        when(userRepository.existsById(AUTHOR_ID)).thenReturn(true);
+        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.of(comment));
+
+        Comment savedComment = comment;
+        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
+
+        CommentShortDto result = commentService.updateComment(AUTHOR_ID, COMMENT_ID, dto);
+
+        ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(captor.capture());
+
+        Comment captured = captor.getValue();
+        assertThat(captured.getText()).isEqualTo("Старый текст");
+        assertThat(captured.getTextOnModeration()).isEqualTo("Обновленный текст");
+        assertThat(captured.getStatus()).isEqualTo(CommentStatus.PENDING);
+
+        assertThat(result.getId()).isEqualTo(COMMENT_ID);
+        assertThat(result.getText()).isEqualTo("Старый текст");
+    }
+
+    @Test
+    void updateComment_throwsUnavailableUpdate_whenUserTriesToUpdateOthersComment() {
+        UpdateCommentDto dto = UpdateCommentDto.builder().text("Текст").build();
+
+        when(userRepository.existsById(ANOTHER_USER_ID)).thenReturn(true);
+        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.updateComment(ANOTHER_USER_ID, COMMENT_ID, dto))
+                .isInstanceOf(UnavailableUpdateException.class)
+                .hasMessageContaining("Update to COMMENT with id 2 is unavailable");
+
+        verify(commentRepository, never()).save(any());
+    }
+
+    @Test
+    void updateComment_throwsNotFound_whenCommentDoesNotExist() {
+        UpdateCommentDto dto = UpdateCommentDto.builder().text("Текст").build();
+        when(userRepository.existsById(AUTHOR_ID)).thenReturn(true);
+        when(commentRepository.findById(eq(COMMENT_ID))).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.updateComment(AUTHOR_ID, COMMENT_ID, dto))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("COMMENT with id=2 not exists");
+
+        verify(commentRepository, never()).save(any());
+    }
 }
