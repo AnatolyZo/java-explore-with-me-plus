@@ -34,14 +34,6 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     private final EventRepository eventRepository;
 
     @Override
-    public CommentShortDto getCommentByEventId(long eventId, long commentId) {
-        log.trace("Инициировано получение комментария с id={}", commentId);
-        Comment result = getCommentById(eventId, commentId);
-        log.debug("Найден комментарий {}", result);
-        return CommentMapper.toCommentShortDto(result);
-    }
-
-    @Override
     public List<CommentShortDto> getComments(long eventId, int from, int size) {
         log.trace("Иницировано получение комментариев с параметрами from={} и size={}", from, size);
         List<Comment> result = commentRepository.findByEventIdWithOffset(eventId, from, size);
@@ -49,11 +41,6 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
         return result.stream()
                 .map(CommentMapper::toCommentShortDto)
                 .toList();
-    }
-
-    private Comment getCommentById(long eventId, long commentId) {
-        return commentRepository.findByIdAndEventId(commentId, eventId)
-                .orElseThrow(() -> new NotFoundException(Entities.COMMENT, commentId));
     }
 
     @Override
@@ -66,10 +53,12 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
                                            List<CommentStatus> states,
                                            int from,
                                            int size) {
+        log.trace("Иницирован поиск комментариев");
         Specification<Comment> spec = new AdminCommentSearchSpecification(text, authorsIds, rangeStart, rangeEnd, eventIds, states);
         Pageable pageable = new OffsetPageRequest(from, size);
         Page<Comment> commentPage = commentRepository.findAll(spec, pageable);
         List<Comment> comments = commentPage.getContent();
+        log.debug("Получен список комментариев {}", comments);
         if (comments.isEmpty()) {
             return List.of();
         }
@@ -82,6 +71,7 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     @Override
     @Transactional
     public CommentDto moderateComment(long adminId, long commentId, ModerationAction action) {
+        log.trace("Иницирована модерация комментария с id {} администратором с id {}", commentId, adminId);
         LocalDateTime now = LocalDateTime.now();
         User admin = findEntityIn(userRepository, adminId, Entities.USER);
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
@@ -102,30 +92,37 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
         comment.setModerated(now);
         comment.setTextOnModeration(null);
         commentRepository.save(comment);
-
+        log.debug("Комментарий после модерации {}", comment);
         return CommentMapper.toCommentDto(comment);
     }
 
     @Override
     @Transactional
     public void deleteCommentByAdmin(long adminId, long commentId) {
+        log.trace("Иницировано удаление комментария с id {} администратором с id {}", commentId, adminId);
+        checkUserExistence(adminId);
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
         commentRepository.delete(comment);
+        log.debug("Удален комметарий {}", comment);
     }
 
     @Override
     @Transactional
     public void deleteCommentByUser(long userId, long commentId) {
+        log.trace("Иницировано удаление комментария с id {} пользователем с id {}", commentId, userId);
+        checkUserExistence(userId);
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
         checkCommentAuthorship(comment, userId);
         commentRepository.delete(comment);
+        log.debug("Удален комметарий {}", comment);
     }
 
     @Override
     public List<CommentShortDto> getUsersComments(long userId) {
+        log.trace("Иницировано получение комментариев пользователя с id {}", userId);
         checkUserExistence(userId);
-
         List<Comment> commentsList = commentRepository.findByAuthorId(userId);
+        log.debug("Получены кооментарии пользователя {}", commentsList);
         return commentsList.stream()
                 .map(CommentMapper::toCommentShortDto)
                 .toList();
@@ -134,23 +131,27 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
     @Override
     @Transactional
     public CommentShortDto createComment(long userId, long eventId, NewCommentDto body) {
+        log.trace("Иницировано создание комментария к событию с id {} пользователем с id {}", eventId, userId);
         User author = findEntityIn(userRepository, userId, Entities.USER);
         Event event = findEntityIn(eventRepository, eventId, Entities.EVENT);
         Comment comment = CommentMapper.toComment(body);
         setFieldsOnCreation(comment, event, author);
         Comment createdComment = commentRepository.save(comment);
+        log.info("Создан комментарий {}", createdComment);
         return CommentMapper.toCommentShortDto(createdComment);
     }
 
     @Override
     @Transactional
     public CommentShortDto updateComment(long userId, long commentId, UpdateCommentDto body) {
+        log.trace("Иницировано обновление комментария с id {} пользователем с id {}", commentId, userId);
         checkUserExistence(userId);
         Comment comment = findEntityIn(commentRepository, commentId, Entities.COMMENT);
         checkCommentAuthorship(comment, userId);
         comment.setTextOnModeration(body.getText());
         comment.setStatus(CommentStatus.PENDING);
         Comment updatedComment = commentRepository.save(comment);
+        log.info("Обновлен комментарий {}", updatedComment);
         return CommentMapper.toCommentShortDto(updatedComment);
     }
 

@@ -7,8 +7,6 @@ import java.util.List;
 public interface CommentService {
     List<CommentShortDto> getComments(long userId, int from, int size);
 
-    CommentShortDto getCommentByEventId(long eventId, long commentId);
-
     List<CommentDto> searchComments(long adminId,
                                     String text,
                                     List<Long> authorsIds,
