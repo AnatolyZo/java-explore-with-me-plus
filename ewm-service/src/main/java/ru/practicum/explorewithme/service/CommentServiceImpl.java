@@ -64,6 +64,7 @@ public class CommentServiceImpl extends ServiceBase implements CommentService {
         if (value <= 0L) {
             throw new RuntimeException("Идентификатор равен нулю или отрицательное значение.");
         }
+    }
 
     @Override
     public List<CommentDto> searchComments(long adminId,

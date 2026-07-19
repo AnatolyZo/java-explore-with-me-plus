@@ -188,7 +188,6 @@ class CommentServiceImplTest {
                 .status(CommentStatus.PENDING)
                 .moderator(moderator)
                 .moderated(LocalDateTime.of(2024, 1, 1, 14, 0))
-                .moderation_reason("Комментарий опубликован")
                 .build();
     }
 

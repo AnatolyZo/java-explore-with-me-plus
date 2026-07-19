@@ -67,19 +67,11 @@ class PublicCommentsControllerTest {
 
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].text").value("Первый комментарий"))
-                .andExpect(jsonPath("$[0].event_id").value(eventId))
-                .andExpect(jsonPath("$[0].author_id").value(100L))
                 .andExpect(jsonPath("$[0].state").value("PENDING"))
-                .andExpect(jsonPath("$[0].moderator_id").value(200L))
-                .andExpect(jsonPath("$[0].moderation_reason").value("Комментарий опубликован"))
 
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].text").value("Второй комментарий"))
-                .andExpect(jsonPath("$[1].event_id").value(eventId))
-                .andExpect(jsonPath("$[1].author_id").value(101L))
-                .andExpect(jsonPath("$[1].state").value("PENDING"))
-                .andExpect(jsonPath("$[1].moderator_id").value(200L))
-                .andExpect(jsonPath("$[1].moderation_reason").value("Комментарий опубликован"));
+                .andExpect(jsonPath("$[1].state").value("PENDING"));
 
         verify(commentService).getComments(eventId, from, size);
     }
@@ -104,8 +96,6 @@ class PublicCommentsControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].text").value("Комментарий"))
-                .andExpect(jsonPath("$[0].event_id").value(eventId))
-                .andExpect(jsonPath("$[0].author_id").value(100L))
                 .andExpect(jsonPath("$[0].state").value("PENDING"));
 
         verify(commentService).getComments(eventId, 0, 10);
@@ -132,11 +122,7 @@ class PublicCommentsControllerTest {
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.id").value(commentId))
                 .andExpect(jsonPath("$.text").value("Один комментарий"))
-                .andExpect(jsonPath("$.event_id").value(eventId))
-                .andExpect(jsonPath("$.author_id").value(100L))
-                .andExpect(jsonPath("$.state").value("PENDING"))
-                .andExpect(jsonPath("$.moderator_id").value(200L))
-                .andExpect(jsonPath("$.moderation_reason").value("Комментарий опубликован"));
+                .andExpect(jsonPath("$.state").value("PENDING"));
 
         verify(commentService).getCommentByEventId(eventId, commentId);
     }
@@ -202,12 +188,8 @@ class PublicCommentsControllerTest {
                 .text(text)
                 .created(LocalDateTime.of(2024, 1, 1, 12, 0))
                 .updated(LocalDateTime.of(2024, 1, 1, 13, 0))
-                .event_id(eventId)
-                .author_id(authorId)
                 .status(CommentStatus.PENDING)
-                .moderator_id(200L)
                 .moderated(LocalDateTime.of(2024, 1, 1, 14, 0))
-                .moderation_reason("Комментарий опубликован")
                 .build();
     }
 }

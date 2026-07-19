@@ -23,5 +23,4 @@ public class CommentDto {
 
     private long moderatorId;
     private LocalDateTime moderated;
-    private String moderationReason;
 }

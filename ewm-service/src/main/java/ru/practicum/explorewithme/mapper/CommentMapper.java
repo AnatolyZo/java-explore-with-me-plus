@@ -28,7 +28,6 @@ public class CommentMapper {
                 .status(comment.getStatus())
                 .moderatorId(comment.getModerator().getId())
                 .moderated(comment.getModerated())
-                .moderationReason(comment.getModerationReason())
                 .build();
     }
 
