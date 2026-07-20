@@ -21,7 +21,7 @@ public class CommentDto {
     @JsonProperty("state")
     private CommentStatus status;
 
-    private long moderatorId;
+    private Long moderatorId;
     private LocalDateTime moderated;
     private String moderationReason;
 }

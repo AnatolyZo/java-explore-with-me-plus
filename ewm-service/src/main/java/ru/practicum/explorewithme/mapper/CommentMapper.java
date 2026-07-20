@@ -26,7 +26,7 @@ public class CommentMapper {
                 .eventId(comment.getEvent().getId())
                 .authorId(comment.getAuthor().getId())
                 .status(comment.getStatus())
-                .moderatorId(comment.getModerator().getId())
+                .moderatorId(comment.getModerator() != null ? comment.getModerator().getId() : null)
                 .moderated(comment.getModerated())
                 .build();
     }

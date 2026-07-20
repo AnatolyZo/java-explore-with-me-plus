@@ -53,11 +53,11 @@ public class AdminCommentSearchSpecification implements Specification<Comment> {
         }
 
         if (rangeStart != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("eventDate"), rangeStart));
+            predicates.add(cb.greaterThanOrEqualTo(root.get("created"), rangeStart));
         }
 
         if (rangeEnd != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get("eventDate"), rangeEnd));
+            predicates.add(cb.lessThanOrEqualTo(root.get("created"), rangeEnd));
         }
 
         if (eventIds != null) {
